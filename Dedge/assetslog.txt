@@ -1,0 +1,93 @@
+[game.py] - Sun Nov 13 10:24:58 2022: log.txt cleared.
+[game.py] - Sun Nov 13 10:24:58 2022: setting up dev stuff, if enabled in code...
+[game.py] - Sun Nov 13 10:24:58 2022: setting up save/load functions
+[game.py] - Sun Nov 13 10:24:58 2022: loading files...
+[game.py] - Sun Nov 13 10:24:58 2022: options loaded!
+[game.py] - Sun Nov 13 10:24:58 2022: Failed to import data - starting afresh with following values:
+[game.py] - Sun Nov 13 10:24:58 2022: ['0', '0']
+[game.py] - Sun Nov 13 10:24:58 2022: Monitor(x=0, y=0, width=2560, height=1440, width_mm=None, height_mm=None, name=None, is_primary=True)
+[game.py] - Sun Nov 13 10:24:58 2022: primary monitor found! using this monitor's screen resolution of 2560x1440.
+[game.py] - Sun Nov 13 10:24:58 2022: Monitor(x=0, y=-800, width=1280, height=800, width_mm=None, height_mm=None, name=None, is_primary=False)
+[game.py] - Sun Nov 13 10:24:58 2022: not primary monitor, checking for other monitors...
+[game.py] - Sun Nov 13 10:24:58 2022: Monitor(x=-1080, y=-247, width=1080, height=1920, width_mm=None, height_mm=None, name=None, is_primary=False)
+[game.py] - Sun Nov 13 10:24:58 2022: not primary monitor, checking for other monitors...
+[game.py] - Sun Nov 13 10:24:58 2022: returning dimensions of primary monitor...
+[game.py] - Sun Nov 13 10:24:58 2022: window size: 2560x1440
+[game.py] - Sun Nov 13 10:24:58 2022: loading menu...
+[game.py] - Sun Nov 13 10:24:58 2022: initialising pygame, variables and clock
+[game.py] - Sun Nov 13 10:25:00 2022: creating window
+[game.py] - Sun Nov 13 10:25:01 2022: importing textures, other assets, and other visual stuff
+[game.py] - Sun Nov 13 10:25:01 2022: using default textures
+[game.py] - Sun Nov 13 10:25:01 2022: loading menu...
+[game.py] - Sun Nov 13 10:25:01 2022: initialising pygame, variables and clock
+[game.py] - Sun Nov 13 10:25:01 2022: creating window
+[game.py] - Sun Nov 13 10:25:02 2022: importing textures, other assets, and other visual stuff
+[game.py] - Sun Nov 13 10:25:02 2022: using default textures
+[game.py] - Sun Nov 13 10:25:02 2022: loading menu...
+[game.py] - Sun Nov 13 10:25:02 2022: initialising pygame, variables and clock
+[game.py] - Sun Nov 13 10:25:02 2022: creating window
+[game.py] - Sun Nov 13 10:25:03 2022: importing textures, other assets, and other visual stuff
+[game.py] - Sun Nov 13 10:25:03 2022: using default textures
+[game.py] - Sun Nov 13 10:25:03 2022: loading menu...
+[game.py] - Sun Nov 13 10:25:03 2022: initialising pygame, variables and clock
+[game.py] - Sun Nov 13 10:25:03 2022: creating window
+[game.py] - Sun Nov 13 10:25:03 2022: importing textures, other assets, and other visual stuff
+[game.py] - Sun Nov 13 10:25:03 2022: using default textures
+[game.py] - Sun Nov 13 10:25:03 2022: loading menu...
+[game.py] - Sun Nov 13 10:25:03 2022: initialising pygame, variables and clock
+[game.py] - Sun Nov 13 10:25:03 2022: creating window
+[game.py] - Sun Nov 13 10:25:04 2022: importing textures, other assets, and other visual stuff
+[game.py] - Sun Nov 13 10:25:04 2022: using default textures
+[game.py] - Sun Nov 13 10:25:04 2022: loading menu...
+[game.py] - Sun Nov 13 10:25:04 2022: initialising pygame, variables and clock
+[game.py] - Sun Nov 13 10:25:04 2022: creating window
+[game.py] - Sun Nov 13 10:25:05 2022: importing textures, other assets, and other visual stuff
+[game.py] - Sun Nov 13 10:25:05 2022: using default textures
+[game.py] - Sun Nov 13 10:25:05 2022: loading menu...
+[game.py] - Sun Nov 13 10:25:05 2022: initialising pygame, variables and clock
+[game.py] - Sun Nov 13 10:25:05 2022: creating window
+[game.py] - Sun Nov 13 10:25:05 2022: importing textures, other assets, and other visual stuff
+[game.py] - Sun Nov 13 10:25:05 2022: using default textures
+[game.py] - Sun Nov 13 10:25:05 2022: loading menu...
+[game.py] - Sun Nov 13 10:25:05 2022: initialising pygame, variables and clock
+[game.py] - Sun Nov 13 10:25:05 2022: creating window
+[game.py] - Sun Nov 13 10:25:06 2022: importing textures, other assets, and other visual stuff
+[game.py] - Sun Nov 13 10:25:06 2022: using default textures
+[game.py] - Sun Nov 13 10:25:06 2022: loading menu...
+[game.py] - Sun Nov 13 10:25:06 2022: initialising pygame, variables and clock
+[game.py] - Sun Nov 13 10:25:06 2022: creating window
+[game.py] - Sun Nov 13 10:25:07 2022: importing textures, other assets, and other visual stuff
+[game.py] - Sun Nov 13 10:25:07 2022: using default textures
+[game.py] - Sun Nov 13 10:25:07 2022: loading menu...
+[game.py] - Sun Nov 13 10:25:07 2022: initialising pygame, variables and clock
+[game.py] - Sun Nov 13 10:25:07 2022: creating window
+[game.py] - Sun Nov 13 10:25:07 2022: importing textures, other assets, and other visual stuff
+[game.py] - Sun Nov 13 10:25:07 2022: using default textures
+[game.py] - Sun Nov 13 10:25:07 2022: loading menu...
+[game.py] - Sun Nov 13 10:25:07 2022: initialising pygame, variables and clock
+[game.py] - Sun Nov 13 10:25:07 2022: creating window
+[game.py] - Sun Nov 13 10:25:08 2022: importing textures, other assets, and other visual stuff
+[game.py] - Sun Nov 13 10:25:08 2022: using default textures
+[game.py] - Sun Nov 13 10:25:08 2022: loading menu...
+[game.py] - Sun Nov 13 10:25:08 2022: initialising pygame, variables and clock
+[game.py] - Sun Nov 13 10:25:08 2022: creating window
+[game.py] - Sun Nov 13 10:25:09 2022: importing textures, other assets, and other visual stuff
+[game.py] - Sun Nov 13 10:25:09 2022: using default textures
+[game.py] - Sun Nov 13 10:25:09 2022: loading menu...
+[game.py] - Sun Nov 13 10:25:09 2022: initialising pygame, variables and clock
+[game.py] - Sun Nov 13 10:25:09 2022: creating window
+[game.py] - Sun Nov 13 10:25:09 2022: importing textures, other assets, and other visual stuff
+[game.py] - Sun Nov 13 10:25:09 2022: using default textures
+[game.py] - Sun Nov 13 10:25:09 2022: loading menu...
+[game.py] - Sun Nov 13 10:25:09 2022: initialising pygame, variables and clock
+[game.py] - Sun Nov 13 10:25:09 2022: creating window
+[game.py] - Sun Nov 13 10:25:10 2022: importing textures, other assets, and other visual stuff
+[game.py] - Sun Nov 13 10:25:10 2022: using default textures
+[game.py] - Sun Nov 13 10:25:10 2022: loading menu...
+[game.py] - Sun Nov 13 10:25:10 2022: initialising pygame, variables and clock
+[game.py] - Sun Nov 13 10:25:10 2022: creating window
+[game.py] - Sun Nov 13 10:25:11 2022: importing textures, other assets, and other visual stuff
+[game.py] - Sun Nov 13 10:25:11 2022: using default textures
+[game.py] - Sun Nov 13 10:25:11 2022: loading menu...
+[game.py] - Sun Nov 13 10:25:11 2022: initialising pygame, variables and clock
+[game.py] - Sun Nov 13 10:25:11 2022: creating window
