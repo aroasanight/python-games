@@ -3,6 +3,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# custom aditions
+*.DS_Store
+*.lnk
+*log.txt
+*save.dmp
+
 # C extensions
 *.so
 
