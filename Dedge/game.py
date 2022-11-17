@@ -313,303 +313,326 @@ while gameopen:
     # -----> GAME <-----
     if screen == 0:
 
-        if time() > t_end:
-            keeprendering = True
+        inmenu = True
 
-            if not gameGen: # run once at the start of the game
+        while inmenu:
 
-                try: # get difficulty from options, or use default of 5
-                    if options[0] == 1: difficulty = 4
-                    elif options[0] == 2: difficulty = 6
-                    elif options[0] == 3: difficulty = 9
-                    else: difficulty = 4
-                    log('using difficulty from options.sf')
-                except:
-                    difficulty = 4
-                    log('no difficulty specified, using default: 4')
-                log('difficulty: '+str(difficulty))
+            if time() > t_end:
+                keeprendering = True
 
-                log('creating class enemy')
-                class Enemy():
-                    def __init__(enemy, x, y):
-                        enemy.xpos = x
-                        enemy.ypos = y
-                log('class enemy created!')
+                if not gameGen: # run once at the start of the game
 
-                score = 0
-                playersize = (width/640)*32
-                playerX = width/2 - playersize/2
-                playerY = height/2 - playersize/2
+                    try: # get difficulty from options, or use default of 5
+                        if options[0] == 1: difficulty = 4
+                        elif options[0] == 2: difficulty = 6
+                        elif options[0] == 3: difficulty = 9
+                        else: difficulty = 4
+                        log('using difficulty from options.sf')
+                    except:
+                        difficulty = 4
+                        log('no difficulty specified, using default: 4')
+                    log('difficulty: '+str(difficulty))
 
-                # to read from array:
-                # enemies[i][j]
-                # where i is the direction (0 = down, 1 = up, 2 = left, 3 = right)
-                # and j is what you want to know about it (0 = enabled:bool, 1 = enemies:list)
-                enemies = [
-                    [True,  []], # 0 - Down
-                    [False, []], # 1 - Up
-                    [False, []], # 2 - Left
-                    [False, []]  # 3 - Right
-                ]
+                    log('creating class enemy')
+                    class Enemy():
+                        def __init__(enemy, x, y):
+                            enemy.xpos = x
+                            enemy.ypos = y
+                    log('class enemy created!')
 
-                backgroundColour = (int(options[2][0]), int(options[2][1]), int(options[2][2]))
+                    score = 0
+                    playersize = (width/640)*32
+                    playerX = width/2 - playersize/2
+                    playerY = height/2 - playersize/2
 
-                for i in range(difficulty): enemies[0][1].append(Enemy(randint(0, int(width-playersize)), randint(int((0-playersize)*8), int(0-playersize))))
+                    # to read from array:
+                    # enemies[i][j]
+                    # where i is the direction (0 = down, 1 = up, 2 = left, 3 = right)
+                    # and j is what you want to know about it (0 = enabled:bool, 1 = enemies:list)
+                    enemies = [
+                        [True,  []], # 0 - Down
+                        [False, []], # 1 - Up
+                        [False, []], # 2 - Left
+                        [False, []]  # 3 - Right
+                    ]
 
-                gameGen = True
+                    backgroundColour = (int(options[2][0]), int(options[2][1]), int(options[2][2]))
 
-            # enable other directions for enemies at the appropriate times
-            if score >= 25 and enemies[1][0] == False:
-                for i in range(difficulty): enemies[1][1].append(Enemy(randint(0, int(width-playersize)), randint(height, int(height+playersize*8))))
-                enemies[1][0] = True
+                    for i in range(difficulty): enemies[0][1].append(Enemy(randint(0, int(width-playersize)), randint(int((0-playersize)*8), int(0-playersize))))
 
-            if score >= 50 and enemies[2][0] == False:
-                for i in range(difficulty): enemies[2][1].append(Enemy(randint(width, int(width+playersize*8)), randint(0, int(height-playersize))))
-                enemies[2][0] = True
+                    gameGen = True
 
-            if score >= 75 and enemies[3][0] == False:
-                for i in range(difficulty): enemies[3][1].append(Enemy(randint(int(0-playersize)*8, int(0-playersize)), randint(0, int(height-playersize))))
-                enemies[3][0] = True
+                # enable other directions for enemies at the appropriate times
+                if score >= 25 and enemies[1][0] == False:
+                    for i in range(difficulty): enemies[1][1].append(Enemy(randint(0, int(width-playersize)), randint(height, int(height+playersize*8))))
+                    enemies[1][0] = True
 
-            # setup speeds in relation to window size - player moves slightly faster than enemies
-            speed = (score/30 + (width/640)*3)+1.5
-            enemyspeed = ((score/30 + (width/640))/2.5)+1.5
+                if score >= 50 and enemies[2][0] == False:
+                    for i in range(difficulty): enemies[2][1].append(Enemy(randint(width, int(width+playersize*8)), randint(0, int(height-playersize))))
+                    enemies[2][0] = True
 
-            DISPLAY.fill([int(options[2][0]), int(options[2][1]), int(options[2][2])])
-            DISPLAY.blit(playerGlow, ((playerX-playersize*0.1625, playerY-playersize*0.1625)))
-            DISPLAY.blit(player, (playerX, playerY))
+                if score >= 75 and enemies[3][0] == False:
+                    for i in range(difficulty): enemies[3][1].append(Enemy(randint(int(0-playersize)*8, int(0-playersize)), randint(0, int(height-playersize))))
+                    enemies[3][0] = True
 
-            # downwards facing enemies
-            if enemies[0][0] and keeprendering:
-                for enemy in enemies[0][1]:
-                    if enemy.ypos > height:
-                        enemy.ypos = randint(int((0-playersize)*8), int(0-playersize))
-                        enemy.xpos = randint(0, int(width-playersize))
-                        score = score + 1
-                        log('enemy moved to top, score increased. new score: '+str(score)+' - new enemy position: '+str(enemy.xpos)+', '+str(enemy.ypos))
-                    else: enemy.ypos = enemy.ypos + enemyspeed
+                # setup speeds in relation to window size - player moves slightly faster than enemies
+                speed = (score/30 + (width/640)*3)+1.5
+                enemyspeed = ((score/30 + (width/640))/2.5)+1.5
 
-                    if keeprendering:
-                        DISPLAY.blit(enemyGlow, ((enemy.xpos-playersize*0.1625, enemy.ypos-playersize*0.1625)))
-                        DISPLAY.blit(enemytex, (enemy.xpos, enemy.ypos))
+                DISPLAY.fill([int(options[2][0]), int(options[2][1]), int(options[2][2])])
+                DISPLAY.blit(playerGlow, ((playerX-playersize*0.1625, playerY-playersize*0.1625)))
+                DISPLAY.blit(player, (playerX, playerY))
 
-                    if playerX+playersize > enemy.xpos and playerX < enemy.xpos+playersize and playerY+playersize > enemy.ypos and playerY < enemy.ypos+playersize:
-                            
-                        deathSound.play()
-                        log('rendering death screen - final score: '+str(score)+' - difficulty: '+str(difficulty)+' - highscore: '+str(savedata[0]))
-                        DISPLAY.fill(backgroundColour)
-                        renderedText = mainfont.render('Your score was '+str(score), True, (255-backgroundColour[0], 255-backgroundColour[1], 255-backgroundColour[2]))
-                        DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, 10))
-                        renderedText = mainfont.render('Your highscore is '+str(savedata[0]), True, (255-backgroundColour[0], 255-backgroundColour[1], 255-backgroundColour[2]))
-                        DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, height-10-renderedText.get_height()))
-                        pygame.display.update()
+                # downwards facing enemies
+                if enemies[0][0] and keeprendering:
+                    for enemy in enemies[0][1]:
+                        if enemy.ypos > height:
+                            enemy.ypos = randint(int((0-playersize)*8), int(0-playersize))
+                            enemy.xpos = randint(0, int(width-playersize))
+                            score = score + 1
+                            log('enemy moved to top, score increased. new score: '+str(score)+' - new enemy position: '+str(enemy.xpos)+', '+str(enemy.ypos))
+                        else: enemy.ypos = enemy.ypos + enemyspeed
 
-                        if score > int(savedata[0]) and difficulty >= int(savedata[1]):
-                            log('new highscore! saving to save.sf...')
-                            savedata[0] = str(score)
-                            savedata[1] = str(difficulty)
-                            savedata[2] = date()
-                            savedata = [str(score), str(difficulty), date()]
-                            save_save()
-                            log('save complete')
+                        if keeprendering:
+                            DISPLAY.blit(enemyGlow, ((enemy.xpos-playersize*0.1625, enemy.ypos-playersize*0.1625)))
+                            DISPLAY.blit(enemytex, (enemy.xpos, enemy.ypos))
 
-                        elif score > int(savedata[0])+15:
-                            log('new highscore! saving to save.sf...')
-                            savedata[0] = str(score)
-                            savedata[1] = str(difficulty)
-                            savedata[2] = date()
-                            save_save()
-                            log('save complete')
+                        if playerX+playersize > enemy.xpos and playerX < enemy.xpos+playersize and playerY+playersize > enemy.ypos and playerY < enemy.ypos+playersize:
+                                
+                            deathSound.play()
+                            log('rendering death screen - final score: '+str(score)+' - difficulty: '+str(difficulty)+' - highscore: '+str(savedata[0]))
+                            DISPLAY.fill(backgroundColour)
+                            renderedText = mainfont.render('Your score was '+str(score), True, (255-backgroundColour[0], 255-backgroundColour[1], 255-backgroundColour[2]))
+                            DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, 10))
+                            renderedText = mainfont.render('Your highscore is '+str(savedata[0]), True, (255-backgroundColour[0], 255-backgroundColour[1], 255-backgroundColour[2]))
+                            DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, height-10-renderedText.get_height()))
+                            pygame.display.update()
 
-                        log('recording score in savefile...')
-                        savedata.append(str(score))
-                        savedata.append(str(difficulty))
-                        savedata[2] = date()
-                        save_save()
-                        log('save complete')
+                            if score > int(savedata[0]) and difficulty >= int(savedata[1]):
+                                log('new highscore! saving to save.sf...')
+                                savedata[0] = str(score)
+                                savedata[1] = str(difficulty)
+                                savedata[2] = date()
+                                savedata = [str(score), str(difficulty), date()]
+                                save_save()
+                                log('save complete')
 
-                        log('waiting 4 seconds')
-                        keeprendering = False
-                        t_end = time() + pausetime
-                        gameGen = False
+                            elif score > int(savedata[0])+15:
+                                log('new highscore! saving to save.sf...')
+                                savedata[0] = str(score)
+                                savedata[1] = str(difficulty)
+                                savedata[2] = date()
+                                save_save()
+                                log('save complete')
 
-            # upwards facing enemies
-            if enemies[1][0] and keeprendering:
-                for enemy in enemies[1][1]:
-                    if enemy.ypos < 0-playersize:
-                        enemy.ypos = randint(height, int(height+(playersize*8)))
-                        enemy.xpos = randint(0, int(width-playersize))
-                        score = score + 1
-                        log('enemy moved to bottom, score increased. new score: '+str(score)+' - new enemy position: '+str(enemy.xpos)+', '+str(enemy.ypos))
-                    else: enemy.ypos = enemy.ypos - enemyspeed
-
-                    if keeprendering:
-                        DISPLAY.blit(enemyGlow, ((enemy.xpos-playersize*0.1625, enemy.ypos-playersize*0.1625)))
-                        DISPLAY.blit(enemytex, (enemy.xpos, enemy.ypos))
-
-                    if playerX+playersize > enemy.xpos and playerX < enemy.xpos+playersize and playerY+playersize > enemy.ypos and playerY < enemy.ypos+playersize:
-                            
-                        deathSound.play()
-                        log('rendering death screen - final score: '+str(score)+' - difficulty: '+str(difficulty)+' - highscore: '+str(savedata[0]))
-                        DISPLAY.fill(backgroundColour)
-                        renderedText = mainfont.render('Your score was '+str(score), True, (255-backgroundColour[0], 255-backgroundColour[1], 255-backgroundColour[2]))
-                        DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, 10))
-                        renderedText = mainfont.render('Your highscore is '+str(savedata[0]), True, (255-backgroundColour[0], 255-backgroundColour[1], 255-backgroundColour[2]))
-                        DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, height-10-renderedText.get_height()))
-                        pygame.display.update()
-
-                        if score > int(savedata[0]) and difficulty >= int(savedata[1]):
-                            log('new highscore! saving to save.sf...')
-                            savedata[0] = str(score)
-                            savedata[1] = str(difficulty)
+                            log('recording score in savefile...')
+                            savedata.append(str(score))
+                            savedata.append(str(difficulty))
                             savedata[2] = date()
                             save_save()
                             log('save complete')
 
-                        elif score > int(savedata[0])+15:
-                            log('new highscore! saving to save.sf...')
-                            savedata[0] = str(score)
-                            savedata[1] = str(difficulty)
+                            log('waiting 4 seconds')
+                            keeprendering = False
+                            t_end = time() + pausetime
+                            gameGen = False
+
+                # upwards facing enemies
+                if enemies[1][0] and keeprendering:
+                    for enemy in enemies[1][1]:
+                        if enemy.ypos < 0-playersize:
+                            enemy.ypos = randint(height, int(height+(playersize*8)))
+                            enemy.xpos = randint(0, int(width-playersize))
+                            score = score + 1
+                            log('enemy moved to bottom, score increased. new score: '+str(score)+' - new enemy position: '+str(enemy.xpos)+', '+str(enemy.ypos))
+                        else: enemy.ypos = enemy.ypos - enemyspeed
+
+                        if keeprendering:
+                            DISPLAY.blit(enemyGlow, ((enemy.xpos-playersize*0.1625, enemy.ypos-playersize*0.1625)))
+                            DISPLAY.blit(enemytex, (enemy.xpos, enemy.ypos))
+
+                        if playerX+playersize > enemy.xpos and playerX < enemy.xpos+playersize and playerY+playersize > enemy.ypos and playerY < enemy.ypos+playersize:
+                                
+                            deathSound.play()
+                            log('rendering death screen - final score: '+str(score)+' - difficulty: '+str(difficulty)+' - highscore: '+str(savedata[0]))
+                            DISPLAY.fill(backgroundColour)
+                            renderedText = mainfont.render('Your score was '+str(score), True, (255-backgroundColour[0], 255-backgroundColour[1], 255-backgroundColour[2]))
+                            DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, 10))
+                            renderedText = mainfont.render('Your highscore is '+str(savedata[0]), True, (255-backgroundColour[0], 255-backgroundColour[1], 255-backgroundColour[2]))
+                            DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, height-10-renderedText.get_height()))
+                            pygame.display.update()
+
+                            if score > int(savedata[0]) and difficulty >= int(savedata[1]):
+                                log('new highscore! saving to save.sf...')
+                                savedata[0] = str(score)
+                                savedata[1] = str(difficulty)
+                                savedata[2] = date()
+                                save_save()
+                                log('save complete')
+
+                            elif score > int(savedata[0])+15:
+                                log('new highscore! saving to save.sf...')
+                                savedata[0] = str(score)
+                                savedata[1] = str(difficulty)
+                                savedata[2] = date()
+                                save_save()
+                                log('save complete')
+
+                            log('recording score in savefile...')
+                            savedata.append(str(score))
+                            savedata.append(str(difficulty))
                             savedata[2] = date()
                             save_save()
                             log('save complete')
 
-                        log('recording score in savefile...')
-                        savedata.append(str(score))
-                        savedata.append(str(difficulty))
-                        savedata[2] = date()
-                        save_save()
-                        log('save complete')
+                            log('waiting 4 seconds')
+                            keeprendering = False
+                            t_end = time() + pausetime
+                            gameGen = False
 
-                        log('waiting 4 seconds')
-                        keeprendering = False
-                        t_end = time() + pausetime
-                        gameGen = False
-
-            # left facing enemies
-            if enemies[2][0] and keeprendering:
-                for enemy in enemies[2][1]:
-                    if enemy.xpos < 0-playersize:
-                        enemy.xpos = randint(width, int(width+(playersize*8)))
-                        enemy.ypos = randint(0, int(height-playersize))
-                        score = score + 1
-                        log('enemy moved to right, score increased. new score: '+str(score)+' - new enemy position: '+str(enemy.xpos)+', '+str(enemy.ypos))
-                    else: enemy.xpos = enemy.xpos - enemyspeed
-                    
-                    if keeprendering:
-                        DISPLAY.blit(enemyGlow, ((enemy.xpos-playersize*0.1625, enemy.ypos-playersize*0.1625)))
-                        DISPLAY.blit(enemytex, (enemy.xpos, enemy.ypos))
-
-                    if playerX+playersize > enemy.xpos and playerX < enemy.xpos+playersize and playerY+playersize > enemy.ypos and playerY < enemy.ypos+playersize:
-                            
-                        deathSound.play()
-                        log('rendering death screen - final score: '+str(score)+' - difficulty: '+str(difficulty)+' - highscore: '+str(savedata[0]))
-                        DISPLAY.fill(backgroundColour)
-                        renderedText = mainfont.render('Your score was '+str(score), True, (255-backgroundColour[0], 255-backgroundColour[1], 255-backgroundColour[2]))
-                        DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, 10))
-                        renderedText = mainfont.render('Your highscore is '+str(savedata[0]), True, (255-backgroundColour[0], 255-backgroundColour[1], 255-backgroundColour[2]))
-                        DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, height-10-renderedText.get_height()))
-                        pygame.display.update()
-
-                        if score > int(savedata[0]) and difficulty >= int(savedata[1]):
-                            log('new highscore! saving to save.sf...')
-                            savedata[0] = str(score)
-                            savedata[1] = str(difficulty)
-                            savedata[2] = date()
-                            save_save()
-                            log('save complete')
-
-                        elif score > int(savedata[0])+15:
-                            log('new highscore! saving to save.sf...')
-                            savedata[0] = str(score)
-                            savedata[1] = str(difficulty)
-                            savedata[2] = date()
-                            save_save()
-                            log('save complete')
-
-                        log('recording score in savefile...')
-                        savedata.append(str(score))
-                        savedata.append(str(difficulty))
-                        savedata[2] = date()
-                        save_save()
-                        log('save complete')
-
-                        log('waiting 4 seconds')
-                        keeprendering = False
-                        t_end = time() + pausetime
-                        gameGen = False
-
-            # right facing enemies
-            if enemies[3][0] and keeprendering:
-                for enemy in enemies[3][1]:
-                    if enemy.xpos > width:
-                        enemy.xpos = randint(int(0-playersize*8), int(0-playersize))
-                        enemy.ypos = randint(0, int(height-playersize))
-                        score = score + 1
-                        log('enemy moved to left, score increased. new score: '+str(score)+' - new enemy position: '+str(enemy.xpos)+', '+str(enemy.ypos))
-                    else: enemy.xpos = enemy.xpos + enemyspeed
+                # left facing enemies
+                if enemies[2][0] and keeprendering:
+                    for enemy in enemies[2][1]:
+                        if enemy.xpos < 0-playersize:
+                            enemy.xpos = randint(width, int(width+(playersize*8)))
+                            enemy.ypos = randint(0, int(height-playersize))
+                            score = score + 1
+                            log('enemy moved to right, score increased. new score: '+str(score)+' - new enemy position: '+str(enemy.xpos)+', '+str(enemy.ypos))
+                        else: enemy.xpos = enemy.xpos - enemyspeed
                         
-                    if keeprendering:
-                        DISPLAY.blit(enemyGlow, ((enemy.xpos-playersize*0.1625, enemy.ypos-playersize*0.1625)))
-                        DISPLAY.blit(enemytex, (enemy.xpos, enemy.ypos))
+                        if keeprendering:
+                            DISPLAY.blit(enemyGlow, ((enemy.xpos-playersize*0.1625, enemy.ypos-playersize*0.1625)))
+                            DISPLAY.blit(enemytex, (enemy.xpos, enemy.ypos))
 
-                    if playerX+playersize > enemy.xpos and playerX < enemy.xpos+playersize and playerY+playersize > enemy.ypos and playerY < enemy.ypos+playersize:
+                        if playerX+playersize > enemy.xpos and playerX < enemy.xpos+playersize and playerY+playersize > enemy.ypos and playerY < enemy.ypos+playersize:
+                                
+                            deathSound.play()
+                            log('rendering death screen - final score: '+str(score)+' - difficulty: '+str(difficulty)+' - highscore: '+str(savedata[0]))
+                            DISPLAY.fill(backgroundColour)
+                            renderedText = mainfont.render('Your score was '+str(score), True, (255-backgroundColour[0], 255-backgroundColour[1], 255-backgroundColour[2]))
+                            DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, 10))
+                            renderedText = mainfont.render('Your highscore is '+str(savedata[0]), True, (255-backgroundColour[0], 255-backgroundColour[1], 255-backgroundColour[2]))
+                            DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, height-10-renderedText.get_height()))
+                            pygame.display.update()
+
+                            if score > int(savedata[0]) and difficulty >= int(savedata[1]):
+                                log('new highscore! saving to save.sf...')
+                                savedata[0] = str(score)
+                                savedata[1] = str(difficulty)
+                                savedata[2] = date()
+                                save_save()
+                                log('save complete')
+
+                            elif score > int(savedata[0])+15:
+                                log('new highscore! saving to save.sf...')
+                                savedata[0] = str(score)
+                                savedata[1] = str(difficulty)
+                                savedata[2] = date()
+                                save_save()
+                                log('save complete')
+
+                            log('recording score in savefile...')
+                            savedata.append(str(score))
+                            savedata.append(str(difficulty))
+                            savedata[2] = date()
+                            save_save()
+                            log('save complete')
+
+                            log('waiting 4 seconds')
+                            keeprendering = False
+                            t_end = time() + pausetime
+                            gameGen = False
+
+                # right facing enemies
+                if enemies[3][0] and keeprendering:
+                    for enemy in enemies[3][1]:
+                        if enemy.xpos > width:
+                            enemy.xpos = randint(int(0-playersize*8), int(0-playersize))
+                            enemy.ypos = randint(0, int(height-playersize))
+                            score = score + 1
+                            log('enemy moved to left, score increased. new score: '+str(score)+' - new enemy position: '+str(enemy.xpos)+', '+str(enemy.ypos))
+                        else: enemy.xpos = enemy.xpos + enemyspeed
                             
-                        deathSound.play()
-                        log('rendering death screen - final score: '+str(score)+' - difficulty: '+str(difficulty)+' - highscore: '+str(savedata[0]))
-                        DISPLAY.fill(backgroundColour)
-                        renderedText = mainfont.render('Your score was '+str(score), True, (255-backgroundColour[0], 255-backgroundColour[1], 255-backgroundColour[2]))
-                        DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, 10))
-                        renderedText = mainfont.render('Your highscore is '+str(savedata[0]), True, (255-backgroundColour[0], 255-backgroundColour[1], 255-backgroundColour[2]))
-                        DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, height-10-renderedText.get_height()))
-                        pygame.display.update()
+                        if keeprendering:
+                            DISPLAY.blit(enemyGlow, ((enemy.xpos-playersize*0.1625, enemy.ypos-playersize*0.1625)))
+                            DISPLAY.blit(enemytex, (enemy.xpos, enemy.ypos))
 
-                        if score > int(savedata[0]) and difficulty >= int(savedata[1]):
-                            log('new highscore! saving to save.sf...')
-                            savedata[0] = str(score)
-                            savedata[1] = str(difficulty)
+                        if playerX+playersize > enemy.xpos and playerX < enemy.xpos+playersize and playerY+playersize > enemy.ypos and playerY < enemy.ypos+playersize:
+                                
+                            deathSound.play()
+                            log('rendering death screen - final score: '+str(score)+' - difficulty: '+str(difficulty)+' - highscore: '+str(savedata[0]))
+                            DISPLAY.fill(backgroundColour)
+                            renderedText = mainfont.render('Your score was '+str(score), True, (255-backgroundColour[0], 255-backgroundColour[1], 255-backgroundColour[2]))
+                            DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, 10))
+                            renderedText = mainfont.render('Your highscore is '+str(savedata[0]), True, (255-backgroundColour[0], 255-backgroundColour[1], 255-backgroundColour[2]))
+                            DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, height-10-renderedText.get_height()))
+                            pygame.display.update()
+
+                            if score > int(savedata[0]) and difficulty >= int(savedata[1]):
+                                log('new highscore! saving to save.sf...')
+                                savedata[0] = str(score)
+                                savedata[1] = str(difficulty)
+                                savedata[2] = date()
+                                save_save()
+                                log('save complete')
+
+                            elif score > int(savedata[0])+15:
+                                log('new highscore! saving to save.sf...')
+                                savedata[0] = str(score)
+                                savedata[1] = str(difficulty)
+                                savedata[2] = date()
+                                save_save()
+                                log('save complete')
+
+                            log('recording score in savefile...')
+                            savedata.append(str(score))
+                            savedata.append(str(difficulty))
                             savedata[2] = date()
                             save_save()
                             log('save complete')
 
-                        elif score > int(savedata[0])+15:
-                            log('new highscore! saving to save.sf...')
-                            savedata[0] = str(score)
-                            savedata[1] = str(difficulty)
-                            savedata[2] = date()
-                            save_save()
-                            log('save complete')
+                            log('waiting 4 seconds')
+                            keeprendering = False
+                            t_end = time() + pausetime
+                            gameGen = False
 
-                        log('recording score in savefile...')
-                        savedata.append(str(score))
-                        savedata.append(str(difficulty))
-                        savedata[2] = date()
-                        save_save()
-                        log('save complete')
+                # score
+                if keeprendering:
+                    renderedText = mainfont.render(str(score), True, (255-backgroundColour[0], 255-backgroundColour[1], 255-backgroundColour[2]))
+                    DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, 10))
 
-                        log('waiting 4 seconds')
-                        keeprendering = False
-                        t_end = time() + pausetime
-                        gameGen = False
+                # keybinds
+                keys = pygame.key.get_pressed()
+                if (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and playerX < width-playersize: playerX = playerX + speed
+                if (keys[pygame.K_LEFT] or keys[pygame.K_a]) and playerX > 0: playerX = playerX - speed
+                if (keys[pygame.K_UP] or keys[pygame.K_w]) and playerY > 0: playerY = playerY - speed
+                if (keys[pygame.K_DOWN] or keys[pygame.K_s]) and playerY < height-playersize: playerY = playerY + speed
+                if keys[pygame.K_p]: screen = 1
 
-            # score
-            if keeprendering:
-                renderedText = mainfont.render(str(score), True, (255-backgroundColour[0], 255-backgroundColour[1], 255-backgroundColour[2]))
-                DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, 10))
+            else:
+                keys = pygame.key.get_pressed()
+                if keys[pygame.K_p]: 
+                    screen = 1
+                    t_end = time()-1
 
-            # keybinds
-            keys = pygame.key.get_pressed()
-            if (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and playerX < width-playersize: playerX = playerX + speed
-            if (keys[pygame.K_LEFT] or keys[pygame.K_a]) and playerX > 0: playerX = playerX - speed
-            if (keys[pygame.K_UP] or keys[pygame.K_w]) and playerY > 0: playerY = playerY - speed
-            if (keys[pygame.K_DOWN] or keys[pygame.K_s]) and playerY < height-playersize: playerY = playerY + speed
-            if keys[pygame.K_p]: screen = 1
+            # exit button
+            DISPLAY.blit(exitbutton, ((width/2)-((width/14)*3), height-(height/8)))
+            exitrect = exitbutton.get_rect().move((width/2)-((width/14)*3), height-(height/8))
 
-        else:
-            keys = pygame.key.get_pressed()
-            if keys[pygame.K_p]: 
-                screen = 1
-                t_end = time()-1
+            # keyboard input
+            for event in pygame.event.get():
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if exitrect.collidepoint(event.pos):
+                        screen = 1
+                        inmenu = False
+                elif event.type==QUIT:
+                    log('quitting')
+                    pygame.quit()
+                    exit()
+
+            try: pygame.display.update()
+            except: pass
+
 
     # -----> MENU <-----
     elif screen == 1:
@@ -643,8 +666,8 @@ while gameopen:
             DISPLAY.blit(helpbutton, ((width/2)-((width/14)*3), (height/6)*3.3))
             helprect = helpbutton.get_rect().move(((width/2)-((width/14)*3), (height/6)*3.3))
 
-            DISPLAY.blit(exitbutton, ((width/2)-((width/14)*3), height-(height/6)))
-            exitrect = exitbutton.get_rect().move(((width/2)-((width/14)*3), height-(height/6)))
+            DISPLAY.blit(exitbutton, ((width/2)-((width/14)*3), height-(height/8)))
+            exitrect = exitbutton.get_rect().move((width/2)-((width/14)*3), height-(height/8))
 
             # if pygame.mouse.get_pressed()[0] and singleplayer_image.collidepoint(mouse_pos):
 
@@ -691,10 +714,10 @@ while gameopen:
     # ----> OPTIONS <---
     elif screen == 2:
 
-        inOptions = True
+        inmenu = True
         reload = True
         
-        while inOptions:
+        while inmenu:
 
             # restart music if it stops
             try:
@@ -710,7 +733,7 @@ while gameopen:
                     log('quitting')
                     pygame.quit()
                     gameopen = False
-                    inOptions = False
+                    inmenu = False
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if input_box1.collidepoint(event.pos): optionsBoxes[0][0] = True
                     if input_box2.collidepoint(event.pos): optionsBoxes[1][0] = True
@@ -733,8 +756,12 @@ while gameopen:
                         optionsBoxes[8] = bool_to_humanreadable(options[5])
                     if exitrect.collidepoint(event.pos):
                         screen = 1
-                        inOptions = False
+                        inmenu = False
                         reload = True
+                    if helprect.collidepoint(event.pos):
+                        screen = 5
+                        inmenu = False
+                        reload = False
                     
                 if event.type == pygame.KEYDOWN:
                     log('Key pressed')
@@ -937,12 +964,14 @@ while gameopen:
             renderedText = mainfont.render('Options', True, (245, 245, 245))
             DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, 10))
 
-            renderedText = smallfont.render('Changes will be applied after restart.', True, (245, 245, 245))
+            renderedText = smallfont.render('Changes will be applied after exit.', True, (245, 245, 245))
             DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, height/9))
 
             # exit button
             DISPLAY.blit(exitbutton, ((width/2)-((width/14)*3), height-(height/8)))
             exitrect = exitbutton.get_rect().move((width/2)-((width/14)*3), height-(height/8))
+            DISPLAY.blit(helpbutton, ((width/2)-((width/14)*3), height-(height/8)*2-5))
+            helprect = helpbutton.get_rect().move((width/2)-((width/14)*3), height-(height/8)*2-5)
 
             # Options 1 - Difficulty
             renderedText = smallfont.render('Difficulty', True, (245, 245, 245))
@@ -955,8 +984,8 @@ while gameopen:
 
             # Options 2 - Username
             renderedText = smallfont.render('Username', True, (245, 245, 245))
-            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2)))
-            input_box2 = pygame.Rect(width/22+renderedText.get_width()+(width/44), (height/6)+(renderedText.get_height()*1.2), width/2, height/24)
+            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.3)))
+            input_box2 = pygame.Rect(width/22+renderedText.get_width()+(width/44), (height/6)+(renderedText.get_height()*1.3), width/2, height/24)
             renderedText = smallfont.render(' '+optionsBoxes[1][1]+' ', True, (245, 245, 245))
             input_box2.w = max(350, renderedText.get_width()+10)
             DISPLAY.blit(renderedText, (input_box2.x+5, input_box2.y+5))
@@ -964,8 +993,8 @@ while gameopen:
 
             # Options 3 - Background colour
             renderedText = smallfont.render('Background colour', True, (245, 245, 245))
-            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*2)))
-            input_box3 = pygame.Rect(width/22+renderedText.get_width()+(width/44), (height/6)+(renderedText.get_height()*1.2*2), width/2, height/24)
+            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.3*2)))
+            input_box3 = pygame.Rect(width/22+renderedText.get_width()+(width/44), (height/6)+(renderedText.get_height()*1.3*2), width/2, height/24)
             renderedText = smallfont.render(' '+optionsBoxes[2][1]+' ', True, (245, 245, 245))
             input_box3.w = max(350, renderedText.get_width()+10)
             DISPLAY.blit(renderedText, (input_box3.x+5, input_box3.y+5))
@@ -973,28 +1002,22 @@ while gameopen:
 
             # Options 4 - Texture pack toggle
             renderedText = smallfont.render('Texture pack on/off', True, (245, 245, 245))
-            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*3)))
-            input_box4 = pygame.Rect(width/22+renderedText.get_width()+(width/44), (height/6)+(renderedText.get_height()*1.2*3), width/2, height/24)
+            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.3*3)))
+            input_box4 = pygame.Rect(width/22+renderedText.get_width()+(width/44), (height/6)+(renderedText.get_height()*1.3*3), width/2, height/24)
             renderedText = smallfont.render(' '+optionsBoxes[3]+' ', True, (245, 245, 245))
             input_box4.w = max(350, renderedText.get_width()+10)
             DISPLAY.blit(renderedText, (input_box4.x+5, input_box4.y+5))
             pygame.draw.rect(DISPLAY, (245, 245, 245), input_box4, 2)
 
             renderedText = smallfont.render('Texture pack name', True, (245, 245, 245))
-            input_box5 = pygame.Rect(width/22+renderedText.get_width()+(width/44), (height/6)+(renderedText.get_height()*1.2*4), width/2, height/24)
+            input_box5 = pygame.Rect(width/22+renderedText.get_width()+(width/44), (height/6)+(renderedText.get_height()*1.3*4), width/2, height/24)
             if options[3]:
                 # Options 5 - Texture pack path
-                DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*4)))
+                DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.3*4)))
                 renderedText = smallfont.render(' '+optionsBoxes[4][1]+' ', True, (245, 245, 245))
                 input_box5.w = max(350, renderedText.get_width()+10)
                 DISPLAY.blit(renderedText, (input_box5.x+5, input_box5.y+5))
                 pygame.draw.rect(DISPLAY, (245, 245, 245), input_box5, 2)
-
-                renderedText = smallfont.render('Press Escape to Restart the game & save your changes.', True, (245, 245, 245))
-                DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*6)))
-            else:
-                renderedText = smallfont.render('Press Escape to Restart the game & save your changes.', True, (245, 245, 245))
-                DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*5)))
 
             # Options 6 - Master volume (0-100)
             renderedText = smallfont.render('Master volume', True, (245, 245, 245))
@@ -1007,8 +1030,8 @@ while gameopen:
 
             # Options 7 - Music volume (0-100)
             renderedText = smallfont.render('Music volume', True, (245, 245, 245))
-            DISPLAY.blit(renderedText, ((width/2), (height/6)+(renderedText.get_height()*1.2)))
-            input_box7 = pygame.Rect(renderedText.get_width()+(width/44)+(width/2), (height/6)+(renderedText.get_height()*1.2), width/2, height/24)
+            DISPLAY.blit(renderedText, ((width/2), (height/6)+(renderedText.get_height()*1.3)))
+            input_box7 = pygame.Rect(renderedText.get_width()+(width/44)+(width/2), (height/6)+(renderedText.get_height()*1.3), width/2, height/24)
             renderedText = smallfont.render(' '+optionsBoxes[6][1]+' ', True, (245, 245, 245))
             input_box7.w = max(350, renderedText.get_width()+10)
             DISPLAY.blit(renderedText, (input_box7.x+5, input_box7.y+5))
@@ -1016,8 +1039,8 @@ while gameopen:
 
             # Options 8 - Death sound volume (0-100)
             renderedText = smallfont.render('Death sound volume', True, (245, 245, 245))
-            DISPLAY.blit(renderedText, ((width/2), (height/6)+(renderedText.get_height()*1.2*2)))
-            input_box8 = pygame.Rect(renderedText.get_width()+(width/44)+(width/2), (height/6)+(renderedText.get_height()*1.2*2), width/2, height/24)
+            DISPLAY.blit(renderedText, ((width/2), (height/6)+(renderedText.get_height()*1.3*2)))
+            input_box8 = pygame.Rect(renderedText.get_width()+(width/44)+(width/2), (height/6)+(renderedText.get_height()*1.3*2), width/2, height/24)
             renderedText = smallfont.render(' '+optionsBoxes[7][1]+' ', True, (245, 245, 245))
             input_box8.w = max(350, renderedText.get_width()+10)
             DISPLAY.blit(renderedText, (input_box8.x+5, input_box8.y+5))
@@ -1025,8 +1048,8 @@ while gameopen:
 
             # Options 9 - Fullscreen toggle
             renderedText = smallfont.render('Fullscreen', True, (245, 245, 245))
-            DISPLAY.blit(renderedText, ((width/2), (height/6)+(renderedText.get_height()*1.2*3)))
-            input_box9 = pygame.Rect(renderedText.get_width()+(width/44)+(width/2), (height/6)+(renderedText.get_height()*1.2*3), width/2, height/24)
+            DISPLAY.blit(renderedText, ((width/2), (height/6)+(renderedText.get_height()*1.3*3)))
+            input_box9 = pygame.Rect(renderedText.get_width()+(width/44)+(width/2), (height/6)+(renderedText.get_height()*1.3*3), width/2, height/24)
             renderedText = smallfont.render(' '+optionsBoxes[8]+' ', True, (245, 245, 245))
             input_box9.w = max(350, renderedText.get_width()+10)
             DISPLAY.blit(renderedText, (input_box9.x+5, input_box9.y+5))
@@ -1034,14 +1057,6 @@ while gameopen:
 
             renderedText = smallfont.render(status, True, (245, 245, 245))
             DISPLAY.blit(renderedText, ((width/2)-(renderedText.get_width()/2), height-(height/22)))
-
-            # keyboard input
-            keys = pygame.key.get_pressed()
-            # if keys[pygame.K_p]: screen = 1
-            if keys[pygame.K_TAB]:
-                screen = 5
-                inOptions = False
-                reload = False
 
         if reload:
             if options[3]: # load custom textures (if enabled)
@@ -1195,137 +1210,181 @@ while gameopen:
     # -----> STATS <----
     elif screen == 3:
 
-        if menurainbow:
-            # rainbow background
-            if colourcycle >= 0 and colourcycle < 200: colours[0] = colours[0] + 1
-            elif colourcycle >= 200 and colourcycle < 400: colours[2] = colours[2] - 1
-            elif colourcycle >= 400 and colourcycle < 600: colours[1] = colours[1] + 1
-            elif colourcycle >= 600 and colourcycle < 800: colours[0] = colours[0] - 1
-            elif colourcycle >= 800 and colourcycle < 1000: colours[2] = colours[2] + 1
-            elif colourcycle >= 1000 and colourcycle < 1200: colours[1] = colours[1] - 1
-            elif colourcycle >= 1200: colourcycle = 0
-            DISPLAY.fill([int(colours[0]/3), int(colours[1]/3), int(colours[2]/3)])
-            colourcycle += 1
-        else: DISPLAY.blit(menuwallpaper, (0, 0))
-        
-        # menu text and images
-        renderedText = mainfont.render('Stats', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, 10))
-        try:
-            renderedText = smallfont.render('Difficulty 1', True, (245, 245, 245))
-            DISPLAY.blit(renderedText, (width/22, height/6))
-            renderedText = smallfont.render('Highscore: '+str(savedata[0]), True, (245, 245, 245))
-            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*1)))
-            renderedText = smallfont.render('Date: '+str(savedata[2]), True, (245, 245, 245))
-            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*2)))
-        except: pass
-        try:
-            renderedText = smallfont.render('Difficulty 2', True, (245, 245, 245))
-            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*3.5)))
-            renderedText = smallfont.render('Highscore: '+str(savedata[0]), True, (245, 245, 245))
-            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*4.5)))
-            renderedText = smallfont.render('Date: '+str(savedata[2]), True, (245, 245, 245))
-            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*5.5)))
-        except: pass
-        try:
-            renderedText = smallfont.render('Difficulty 3', True, (245, 245, 245))
-            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*7)))
-            renderedText = smallfont.render('Highscore: '+str(savedata[0]), True, (245, 245, 245))
-            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*8)))
-            renderedText = smallfont.render('Date: '+str(savedata[2]), True, (245, 245, 245))
-            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*9)))
-        except: pass
-        renderedText = smallfont.render('Press P to Exit, or 1 to jump directly into the game.', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*11)))
+        inmenu = True
 
-        # keyboard input
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_p]: screen = 1
-        if keys[pygame.K_1]: screen = 0
+        while inmenu:
+
+            if menurainbow:
+                # rainbow background
+                if colourcycle >= 0 and colourcycle < 200: colours[0] = colours[0] + 1
+                elif colourcycle >= 200 and colourcycle < 400: colours[2] = colours[2] - 1
+                elif colourcycle >= 400 and colourcycle < 600: colours[1] = colours[1] + 1
+                elif colourcycle >= 600 and colourcycle < 800: colours[0] = colours[0] - 1
+                elif colourcycle >= 800 and colourcycle < 1000: colours[2] = colours[2] + 1
+                elif colourcycle >= 1000 and colourcycle < 1200: colours[1] = colours[1] - 1
+                elif colourcycle >= 1200: colourcycle = 0
+                DISPLAY.fill([int(colours[0]/3), int(colours[1]/3), int(colours[2]/3)])
+                colourcycle += 1
+            else: DISPLAY.blit(menuwallpaper, (0, 0))
+            
+            # menu text and images
+            renderedText = mainfont.render('Stats', True, (245, 245, 245))
+            DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, 10))
+            try:
+                renderedText = smallfont.render('Difficulty 1', True, (245, 245, 245))
+                DISPLAY.blit(renderedText, (width/22, height/6))
+                renderedText = smallfont.render('Highscore: '+str(savedata[0]), True, (245, 245, 245))
+                DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*1)))
+                renderedText = smallfont.render('Date: '+str(savedata[2]), True, (245, 245, 245))
+                DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*2)))
+            except: pass
+            try:
+                renderedText = smallfont.render('Difficulty 2', True, (245, 245, 245))
+                DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*3.5)))
+                renderedText = smallfont.render('Highscore: '+str(savedata[0]), True, (245, 245, 245))
+                DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*4.5)))
+                renderedText = smallfont.render('Date: '+str(savedata[2]), True, (245, 245, 245))
+                DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*5.5)))
+            except: pass
+            try:
+                renderedText = smallfont.render('Difficulty 3', True, (245, 245, 245))
+                DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*7)))
+                renderedText = smallfont.render('Highscore: '+str(savedata[0]), True, (245, 245, 245))
+                DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*8)))
+                renderedText = smallfont.render('Date: '+str(savedata[2]), True, (245, 245, 245))
+                DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*9)))
+            except: pass
+
+            # exit button
+            DISPLAY.blit(exitbutton, ((width/2)-((width/14)*3), height-(height/8)))
+            exitrect = exitbutton.get_rect().move((width/2)-((width/14)*3), height-(height/8))
+
+            # keyboard input
+            for event in pygame.event.get():
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if exitrect.collidepoint(event.pos):
+                        screen = 1
+                        inmenu = False
+                elif event.type==QUIT:
+                    log('quitting')
+                    pygame.quit()
+                    exit()
+
+            try: pygame.display.update()
+            except: pass
 
     # -----> HELP <-----
     elif screen == 4:
 
-        if menurainbow:
-            # rainbow background
-            if colourcycle >= 0 and colourcycle < 200: colours[0] = colours[0] + 1
-            elif colourcycle >= 200 and colourcycle < 400: colours[2] = colours[2] - 1
-            elif colourcycle >= 400 and colourcycle < 600: colours[1] = colours[1] + 1
-            elif colourcycle >= 600 and colourcycle < 800: colours[0] = colours[0] - 1
-            elif colourcycle >= 800 and colourcycle < 1000: colours[2] = colours[2] + 1
-            elif colourcycle >= 1000 and colourcycle < 1200: colours[1] = colours[1] - 1
-            elif colourcycle >= 1200: colourcycle = 0
-            DISPLAY.fill([int(colours[0]/3), int(colours[1]/3), int(colours[2]/3)])
-            colourcycle += 1
-        else: DISPLAY.blit(menuwallpaper, (0, 0))
+        inmenu = True
 
-        # menu text and images
-        renderedText = mainfont.render('Help', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, 10))
-        renderedText = smallfont.render('To move your character, use the arrow keys. Press P to return to the menu.', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, height/6))
-        renderedText = smallfont.render('The aim of the game is to avoid the enemies for as long as possible.', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2)))
-        renderedText = smallfont.render('The game ends when you first touch an enemy.', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*2)))
-        renderedText = smallfont.render('Good luck!', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*3)))
-        renderedText = smallfont.render('Press P to Exit, or 1 to jump directly into the game.', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*5)))
+        while inmenu:
 
-        # keyboard input
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_p]: screen = 1
-        if keys[pygame.K_1]: screen = 0
+            if menurainbow:
+                # rainbow background
+                if colourcycle >= 0 and colourcycle < 200: colours[0] = colours[0] + 1
+                elif colourcycle >= 200 and colourcycle < 400: colours[2] = colours[2] - 1
+                elif colourcycle >= 400 and colourcycle < 600: colours[1] = colours[1] + 1
+                elif colourcycle >= 600 and colourcycle < 800: colours[0] = colours[0] - 1
+                elif colourcycle >= 800 and colourcycle < 1000: colours[2] = colours[2] + 1
+                elif colourcycle >= 1000 and colourcycle < 1200: colours[1] = colours[1] - 1
+                elif colourcycle >= 1200: colourcycle = 0
+                DISPLAY.fill([int(colours[0]/3), int(colours[1]/3), int(colours[2]/3)])
+                colourcycle += 1
+            else: DISPLAY.blit(menuwallpaper, (0, 0))
+
+            # menu text and images
+            renderedText = mainfont.render('Help', True, (245, 245, 245))
+            DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, 10))
+            renderedText = smallfont.render('To move your character, use the arrow keys. Press P to return to the menu.', True, (245, 245, 245))
+            DISPLAY.blit(renderedText, (width/22, height/6))
+            renderedText = smallfont.render('The aim of the game is to avoid the enemies for as long as possible.', True, (245, 245, 245))
+            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2)))
+            renderedText = smallfont.render('The game ends when you first touch an enemy.', True, (245, 245, 245))
+            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*2)))
+            renderedText = smallfont.render('Good luck!', True, (245, 245, 245))
+            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*3)))
+
+            # exit button
+            DISPLAY.blit(exitbutton, ((width/2)-((width/14)*3), height-(height/8)))
+            exitrect = exitbutton.get_rect().move((width/2)-((width/14)*3), height-(height/8))
+
+            # keyboard input
+            for event in pygame.event.get():
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if exitrect.collidepoint(event.pos):
+                        screen = 1
+                        inmenu = False
+                elif event.type==QUIT:
+                    log('quitting')
+                    pygame.quit()
+                    exit()
+
+            try: pygame.display.update()
+            except: pass
 
     # ---> OPT HELP <---
     elif screen == 5:
 
-        if menurainbow:
-            # rainbow background
-            if colourcycle >= 0 and colourcycle < 200: colours[0] = colours[0] + 1
-            elif colourcycle >= 200 and colourcycle < 400: colours[2] = colours[2] - 1
-            elif colourcycle >= 400 and colourcycle < 600: colours[1] = colours[1] + 1
-            elif colourcycle >= 600 and colourcycle < 800: colours[0] = colours[0] - 1
-            elif colourcycle >= 800 and colourcycle < 1000: colours[2] = colours[2] + 1
-            elif colourcycle >= 1000 and colourcycle < 1200: colours[1] = colours[1] - 1
-            elif colourcycle >= 1200: colourcycle = 0
-            DISPLAY.fill([int(colours[0]/3), int(colours[1]/3), int(colours[2]/3)])
-            colourcycle += 1
-        else: DISPLAY.blit(menuwallpaper, (0, 0))
+        inmenu = True
 
-        # menu text and images
-        renderedText = mainfont.render('Options help', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, 10))
+        while inmenu:
 
-        renderedText = smallfont.render('To edit a value, click in the box next to it, and change it\'s value by typing a new one.', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*1)))
+            if menurainbow:
+                # rainbow background
+                if colourcycle >= 0 and colourcycle < 200: colours[0] = colours[0] + 1
+                elif colourcycle >= 200 and colourcycle < 400: colours[2] = colours[2] - 1
+                elif colourcycle >= 400 and colourcycle < 600: colours[1] = colours[1] + 1
+                elif colourcycle >= 600 and colourcycle < 800: colours[0] = colours[0] - 1
+                elif colourcycle >= 800 and colourcycle < 1000: colours[2] = colours[2] + 1
+                elif colourcycle >= 1000 and colourcycle < 1200: colours[1] = colours[1] - 1
+                elif colourcycle >= 1200: colourcycle = 0
+                DISPLAY.fill([int(colours[0]/3), int(colours[1]/3), int(colours[2]/3)])
+                colourcycle += 1
+            else: DISPLAY.blit(menuwallpaper, (0, 0))
 
-        renderedText = smallfont.render('Press enter to submit.', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*2)))
+            # menu text and images
+            renderedText = mainfont.render('Options help', True, (245, 245, 245))
+            DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, 10))
 
-        renderedText = smallfont.render('When editing the Difficulty value, Press 1, 2, or 3. You don\'t need to press enter.', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*3.5)))
+            renderedText = smallfont.render('To edit a value, click in the box next to it, and change it\'s value by typing a new one.', True, (245, 245, 245))
+            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*1)))
 
-        renderedText = smallfont.render('When editing the Background value, type 3 numbers that are above 0 and less than 255, ', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*5)))
+            renderedText = smallfont.render('Press enter to submit.', True, (245, 245, 245))
+            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*2)))
 
-        renderedText = smallfont.render('seperated by commas (e.g. 45, 255, 0).', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*6)))
+            renderedText = smallfont.render('When editing the Difficulty value, Press 1, 2, or 3. You don\'t need to press enter.', True, (245, 245, 245))
+            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*3.5)))
 
-        renderedText = smallfont.render('Click a toggle (on/off) to toggle it.', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*7.5)))
+            renderedText = smallfont.render('When editing the Background value, type 3 numbers that are above 0 and less than 255, ', True, (245, 245, 245))
+            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*5)))
 
-        renderedText = smallfont.render('Any volume fields can be any whole number between 0 and 100.', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*9)))
+            renderedText = smallfont.render('seperated by commas (e.g. 45, 255, 0).', True, (245, 245, 245))
+            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*6)))
 
-        renderedText = smallfont.render('Press P to return to the options menu, or 1 to return to the main menu.', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, height-renderedText.get_height()*2))
+            renderedText = smallfont.render('Click a toggle (on/off) to toggle it.', True, (245, 245, 245))
+            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*7.5)))
 
-        # keyboard input
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_p]: screen = 2
-        if keys[pygame.K_1]: screen = 1
+            renderedText = smallfont.render('Any volume fields can be any whole number between 0 and 100.', True, (245, 245, 245))
+            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*9)))
+
+            # exit button
+            DISPLAY.blit(exitbutton, ((width/2)-((width/14)*3), height-(height/8)))
+            exitrect = exitbutton.get_rect().move((width/2)-((width/14)*3), height-(height/8))
+
+            # keyboard input
+            for event in pygame.event.get():
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if exitrect.collidepoint(event.pos):
+                        screen = 2
+                        inmenu = False
+                elif event.type==QUIT:
+                    log('quitting')
+                    pygame.quit()
+                    exit()
+
+            try: pygame.display.update()
+            except: pass
 
 # 0 - game
 # 1 - menu
