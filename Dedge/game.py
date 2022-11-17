@@ -8,6 +8,7 @@ from datetime import datetime
 from pygame.locals import *
 from pygame.time import Clock
 from random import randint
+from sys import exit
 
 assetspath = "assets/"
 ufpath = "userfiles/"
@@ -42,6 +43,18 @@ def save_save():
 
 log('loading files...')
 
+
+# load save file
+try:
+    savedata = load_save()
+    log('save data loaded!')
+except:
+    log('Failed to import data - starting afresh with following values:')
+    savedata = ['0', '0', time()]
+    log(savedata)
+
+pygame.init()
+print(pygame.display.Info().current_w)
 # load options file
 try:
     options = load_options()
@@ -49,154 +62,193 @@ try:
     log(options)
 except:
     log('Failed to load options - starting afresh with following values:')
-    options = [1024, 576, 5, 'UnnamedPlayer'+str(randint(1000, 9999)), 12, 12, 12, assetspath+'defaultTextures/']
+    #          0           1                                          2.0  2.1  2.2  3                4                5           6              7             8                    9.0                               9.1
+    #          Difficulty  Username                                   R    G    B    Textures toggle  Texture pack     Fullscreen  Master volume  Music volume  Death sound volume   Width                             Height
+    options = [2,          'UnnamedPlayer'+str(randint(1000, 9999)), [12,  12,  12], False,           'fakecomicsans', True,       1.0,           0.3,          0.5,                [pygame.display.Info().current_w,  pygame.display.Info().current_h]]
     try: save_options()
     except: pass
     log(options)
+if options[5]: 
+    DISPLAY = pygame.display.set_mode((options[9][0], options[9][1]), pygame.FULLSCREEN)
+    width, height = DISPLAY.get_size()
+else: DISPLAY = pygame.display.set_mode((options[9][0], options[9][1]))
+log('window size: '+str(width)+'x'+str(height))
 
-try:
-    # load save file
-    from screeninfo import get_monitors # Comment this line to open in windows mode (toggle soon:tm:)
-    try:
-        savedata = load_save()
-        log('save data loaded!')
-    except:
-        log('Failed to import data - starting afresh with following values:')
-        savedata = ['0', '0', time()]
-        log(savedata)
-
-    # set screen resoltution
-    primaryMonitor = [0, 0, True]
-    try:
-        for m in get_monitors():
-            log(str(m))
-            if m.is_primary:
-                log("primary monitor found! using this monitor's screen resolution of "+str(m.width)+"x"+str(m.height)+".")
-                primaryMonitor[0] = m.width
-                primaryMonitor[1] = m.height
-            else: log("not primary monitor, checking for other monitors...")
-    except: primaryMonitor = [1024, 576, False]
-except: primaryMonitor = [1024, 576, False]
-
-try:
-    windowwidth = primaryMonitor[0]
-    windowheight = primaryMonitor[1]
-
-except:
-    try:
-        windowwidth = options[0]
-        windowheight = options[1]
-        log('using window height from options.sf')
-
-    except:
-        windowwidth = 640
-        windowheight = 360
-        log('no window size specified, using default: 640x360')
-
-width = windowwidth
-height = windowheight
 
 game_name = 'game'
-
-(width, height) = (windowwidth, windowheight)
-log('window size: '+str(width)+'x'+str(height))
 
 # setup stuff
 gameopen = True
 log('initialising pygame, variables and clock')
-pygame.init()
 pygame.mixer.init()
 playersize = (width/640)*32
 clock = Clock()
 log('creating window')
 
-if primaryMonitor[2]: DISPLAY = pygame.display.set_mode((width, height), pygame.FULLSCREEN)
-else: DISPLAY = pygame.display.set_mode((width, height))
 
 pygame.display.set_caption(game_name)
 log('importing textures, other assets, and other visual stuff')
 backgroundColour = (55, 55, 55)
 
-if options[7]: # load custom textures (if enabled)
+# import textures that are always the same (not in pack)
+playerGlow = pygame.image.load(assetspath+'defaultTextures/playerGlow.png')
+pygame.display.set_icon(pygame.image.load(assetspath+'defaultTextures/appicon.png'))
+enemyGlow = pygame.image.load(assetspath+'defaultTextures/enemyGlow.png')
+playerGlow = pygame.transform.scale(playerGlow, (playersize*1.325, playersize*1.325))
+enemyGlow = pygame.transform.scale(enemyGlow, (playersize*1.325, playersize*1.325))
+
+menurainbow = True
+gamerainbow = True
+
+numberkeys = [pygame.K_0, pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5, pygame.K_6, pygame.K_7, pygame.K_8, pygame.K_9]
+
+if options[3]: # load custom textures (if enabled)
     log('using custom textures')
 
     # Player texture
     try:
-        player = pygame.image.load(options[8]+'player.png')
+        player = pygame.image.load('userfiles/textures/'+options[4]+'/player.png')
         log('player texture imported')
     except:
         player = pygame.image.load(assetspath+'defaultTextures/player.png')
         log('player texture not found, using default')
 
-    # Player glow
-    try:
-        playerGlow = pygame.image.load(options[8]+'playerGlow.png')
-        log('playerGlow texture imported')
-    except:
-        playerGlow = pygame.image.load(assetspath+'defaultTextures/playerGlow.png')
-        log('playerGlow texture not found, using default')
-
     # Enemy texture
     try:
-        enemytex = pygame.image.load(options[8]+'enemy.png')
+        enemytex = pygame.image.load('userfiles/textures/'+options[4]+'/enemy.png')
         log('enemy texture imported')
     except:
         enemytex = pygame.image.load(assetspath+'defaultTextures/enemy.png')
         log('enemy texture not found, using default')
 
-    # Enemy glow
+    # settingsbutton texture
     try:
-        enemyGlow = pygame.image.load(options[8]+'enemyGlow.png')
-        log('enemyGlow texture imported')
+        settingsbutton = pygame.image.load('userfiles/textures/'+options[4]+'/options.png')
+        log('settingsbutton texture imported')
     except:
-        enemyGlow = pygame.image.load(assetspath+'defaultTextures/enemyGlow.png')
-        log('enemyGlow texture not found, using default')
+        settingsbutton = pygame.image.load(assetspath+'defaultTextures/options.png')
+        log('settingsbutton texture not found, using default')
+
+    # menubutton texture
+    try:
+        menubutton = pygame.image.load('userfiles/textures/'+options[4]+'/menu.png')
+        log('menubutton texture imported')
+    except:
+        menubutton = pygame.image.load(assetspath+'defaultTextures/menu.png')
+        log('menubutton texture not found, using default')
+
+    # exitbutton texture
+    try:
+        exitbutton = pygame.image.load('userfiles/textures/'+options[4]+'/exit.png')
+        log('exitbutton texture imported')
+    except:
+        exitbutton = pygame.image.load(assetspath+'defaultTextures/exit.png')
+        log('exitbutton texture not found, using default')
+
+    # statsbutton texture
+    try:
+        statsbutton = pygame.image.load('userfiles/textures/'+options[4]+'/stats.png')
+        log('statsbutton texture imported')
+    except:
+        statsbutton = pygame.image.load(assetspath+'defaultTextures/stats.png')
+        log('statsbutton texture not found, using default')
+
+    # playbutton texture
+    try:
+        playbutton = pygame.image.load('userfiles/textures/'+options[4]+'/play.png')
+        log('playbutton texture imported')
+    except:
+        playbutton = pygame.image.load(assetspath+'defaultTextures/play.png')
+        log('playbutton texture not found, using default')
+
+    # helpbutton texture
+    try:
+        helpbutton = pygame.image.load('userfiles/textures/'+options[4]+'/help.png')
+        log('helpbutton texture imported')
+    except:
+        helpbutton = pygame.image.load(assetspath+'defaultTextures/help.png')
+        log('helpbutton texture not found, using default')
+
+    # Menu texture
+    try:
+        menuwallpaper = pygame.image.load('userfiles/textures/'+options[4]+'/menu.png')
+        menurainbow = False
+        log('menu texture imported')
+    except:
+        menurainbow = True
+        log('menu texture not found, using rainbow')
+
+    # Game texture
+    try:
+        gamewallpaper = pygame.image.load('userfiles/textures/'+options[4]+'/game.png')
+        gamerainbow = False
+        log('game texture imported')
+    except:
+        gamerainbow = True
+        log('game texture not found, using rainbow')
 
     # Music
     try:
-        pygame.mixer.music.load(options[8]+'music.mp3')
+        pygame.mixer.music.load('userfiles/textures/'+options[4]+'/music.mp3')
         log('music imported')
     except:
         pygame.mixer.music.load(assetspath+'defaultTextures/music.mp3')
         log('music not found, using default')
 
+    # Death sound
+    try:
+        deathSound = pygame.mixer.Sound('userfiles/textures/'+options[4]+'/death.mp3')
+        log('death sound imported')
+    except:
+        deathSound = pygame.mixer.Sound(assetspath+'defaultTextures/death.mp3')
+        log('death sound not found, using default')
+
     # Main font
     try:
-        mainfont = pygame.font.Font(options[8]+'font.ttf', int((windowwidth/640)*32))
+        mainfont = pygame.font.Font('userfiles/textures/'+options[4]+'/font.ttf', int((width/640)*32))
         log('main font imported')
     except:
-        mainfont = pygame.font.Font(assetspath+'defaultTextures/font.ttf', int((windowwidth/640)*32))
+        mainfont = pygame.font.Font(assetspath+'defaultTextures/font.ttf', int((width/640)*32))
         log('main font not found, using default')
 
     # Small font
     try:
-        smallfont = pygame.font.Font(options[8]+'smallfont.ttf', int((windowwidth/640)*12))
+        smallfont = pygame.font.Font('userfiles/textures/'+options[4]+'/smallfont.ttf', int((width/640)*12))
         log('small font imported')
     except:
-        smallfont = pygame.font.Font(assetspath+'defaultTextures/smallfont.ttf', int((windowwidth/640)*12))
+        smallfont = pygame.font.Font(assetspath+'defaultTextures/smallfont.ttf', int((width/640)*12))
         log('small font not found, using default')
 
 else: # import default textures if texture packs are disabled
     log('using default textures')
     player = pygame.image.load(assetspath+'defaultTextures/player.png')
-    playerGlow = pygame.image.load(assetspath+'defaultTextures/playerGlow.png')
     enemytex = pygame.image.load(assetspath+'defaultTextures/enemy.png')
-    enemyGlow = pygame.image.load(assetspath+'defaultTextures/enemyGlow.png')
     pygame.mixer.music.load(assetspath+'defaultTextures/music.mp3')
-    mainfont = pygame.font.Font(assetspath+'defaultTextures/font.ttf', int((windowwidth/640)*32))
-    smallfont = pygame.font.Font(assetspath+'defaultTextures/smallfont.ttf', int((windowwidth/640)*12))
+    deathSound = pygame.mixer.Sound(assetspath+'defaultTextures/death.mp3')
+    mainfont = pygame.font.Font(assetspath+'defaultTextures/font.ttf', int((width/640)*32))
+    smallfont = pygame.font.Font(assetspath+'defaultTextures/smallfont.ttf', int((width/640)*12))
+    settingsbutton = pygame.image.load(assetspath+'defaultTextures/options.png')
+    menubutton = pygame.image.load(assetspath+'defaultTextures/menu.png')
+    exitbutton = pygame.image.load(assetspath+'defaultTextures/exit.png')
+    statsbutton = pygame.image.load(assetspath+'defaultTextures/stats.png')
+    playbutton = pygame.image.load(assetspath+'defaultTextures/play.png')
+    helpbutton = pygame.image.load(assetspath+'defaultTextures/help.png')
 
-# set app icon - this is outside the if/else loop because it isn't able to be changed by the texture pack
-pygame.display.set_icon(pygame.image.load(assetspath+'defaultTextures/appicon.png'))
-
-# resize player + enemy textures for window size
+# resize textures for window size
 player = pygame.transform.scale(player, (playersize, playersize))
-playerGlow = pygame.transform.scale(playerGlow, (playersize*1.25, playersize*1.25))
 enemytex = pygame.transform.scale(enemytex, (playersize, playersize))
-enemyGlow = pygame.transform.scale(enemyGlow, (playersize*1.25, playersize*1.25))
+settingsbutton = pygame.transform.scale(settingsbutton, (round(width/14)*6, round(width/14)*0.75))
+menubutton = pygame.transform.scale(menubutton, (round(width/14)*6, round(width/14)*0.75))
+exitbutton = pygame.transform.scale(exitbutton, (round(width/14)*6, round(width/14)*0.75))
+statsbutton = pygame.transform.scale(statsbutton, (round(width/14)*6, round(width/14)*0.75))
+playbutton = pygame.transform.scale(playbutton, (round(width/14)*6, round(width/14)*0.75))
+helpbutton = pygame.transform.scale(helpbutton, (round(width/14)*6, round(width/14)*0.75))
+if not menurainbow: menuwallpaper = pygame.transform.scale(menuwallpaper, (width, height))
+if not gamerainbow: gamewallpaper = pygame.transform.scale(gamewallpaper, (width, height))
 
-# music stuff
-pygame.mixer.music.set_volume(0.3)
+# sound stuff
+deathSound.set_volume(options[8]*options[6])
+pygame.mixer.music.set_volume(options[7]*options[6])
 pygame.mixer.music.play()
 log('music started')
 
@@ -218,11 +270,18 @@ def bool_to_humanreadable(input):
 # where i is the box you want info for (0-4)
 # and j is what you want about it (0 = active:bool, 1 = text:str)
 optionsBoxes = [
-    [False, str(options[2])], # Options box 1
-    [False, str(options[3])], # Options box 2
-    [False, str(options[4])+', '+str(options[5])+', '+str(options[6])], # Options box 3
-    [False, str(bool_to_humanreadable(options[7]))], # Options box 4
-    [False, str(options[8])] # Options box 5
+    # column 1
+    [False, str(options[0])], # Options box 1
+    [False, str(options[1])], # Options box 2
+    [False, str(options[2][0])+', '+str(options[2][1])+', '+str(options[2][2])], # Options box 3
+    bool_to_humanreadable(options[3]), # Options box 4
+    [False, str(options[4])], # Options box 5
+
+    # column 2
+    [False, str(round(options[6]*100))], # Options box 6
+    [False, str(round(options[7]*100))], # Options box 7
+    [False, str(round(options[8]*100))], # Options box 8
+    bool_to_humanreadable(options[5]) # Options box 9
 ]
 
 t_end = time() - 1 # a time in the past so there's no delay when starting
@@ -244,7 +303,7 @@ while gameopen:
         if event.type==QUIT:
             log('quitting')
             pygame.quit()
-            gameopen = False
+            exit()
     
     if not gameopen: break
 
@@ -260,11 +319,14 @@ while gameopen:
             if not gameGen: # run once at the start of the game
 
                 try: # get difficulty from options, or use default of 5
-                    difficulty = options[2]
+                    if options[0] == 1: difficulty = 4
+                    elif options[0] == 2: difficulty = 6
+                    elif options[0] == 3: difficulty = 9
+                    else: difficulty = 4
                     log('using difficulty from options.sf')
                 except:
-                    difficulty = 5
-                    log('no difficulty specified, using default: 5')
+                    difficulty = 4
+                    log('no difficulty specified, using default: 4')
                 log('difficulty: '+str(difficulty))
 
                 log('creating class enemy')
@@ -290,7 +352,7 @@ while gameopen:
                     [False, []]  # 3 - Right
                 ]
 
-                backgroundColour = (int(options[4]), int(options[5]), int(options[6]))
+                backgroundColour = (int(options[2][0]), int(options[2][1]), int(options[2][2]))
 
                 for i in range(difficulty): enemies[0][1].append(Enemy(randint(0, int(width-playersize)), randint(int((0-playersize)*8), int(0-playersize))))
 
@@ -310,11 +372,11 @@ while gameopen:
                 enemies[3][0] = True
 
             # setup speeds in relation to window size - player moves slightly faster than enemies
-            speed = (score/30 + (windowwidth/640)*3)+1.5
-            enemyspeed = ((score/30 + (windowwidth/640))/2.5)+1.5
+            speed = (score/30 + (width/640)*3)+1.5
+            enemyspeed = ((score/30 + (width/640))/2.5)+1.5
 
-            DISPLAY.fill([int(options[4]), int(options[5]), int(options[6])])
-            DISPLAY.blit(playerGlow, ((playerX-playersize*0.125, playerY-playersize*0.125)))
+            DISPLAY.fill([int(options[2][0]), int(options[2][1]), int(options[2][2])])
+            DISPLAY.blit(playerGlow, ((playerX-playersize*0.1625, playerY-playersize*0.1625)))
             DISPLAY.blit(player, (playerX, playerY))
 
             # downwards facing enemies
@@ -327,11 +389,13 @@ while gameopen:
                         log('enemy moved to top, score increased. new score: '+str(score)+' - new enemy position: '+str(enemy.xpos)+', '+str(enemy.ypos))
                     else: enemy.ypos = enemy.ypos + enemyspeed
 
-                    DISPLAY.blit(enemyGlow, ((enemy.xpos-playersize*0.125, enemy.ypos-playersize*0.125)))
-                    DISPLAY.blit(enemytex, (enemy.xpos, enemy.ypos))
+                    if keeprendering:
+                        DISPLAY.blit(enemyGlow, ((enemy.xpos-playersize*0.1625, enemy.ypos-playersize*0.1625)))
+                        DISPLAY.blit(enemytex, (enemy.xpos, enemy.ypos))
 
                     if playerX+playersize > enemy.xpos and playerX < enemy.xpos+playersize and playerY+playersize > enemy.ypos and playerY < enemy.ypos+playersize:
                             
+                        deathSound.play()
                         log('rendering death screen - final score: '+str(score)+' - difficulty: '+str(difficulty)+' - highscore: '+str(savedata[0]))
                         DISPLAY.fill(backgroundColour)
                         renderedText = mainfont.render('Your score was '+str(score), True, (255-backgroundColour[0], 255-backgroundColour[1], 255-backgroundColour[2]))
@@ -365,8 +429,8 @@ while gameopen:
                         log('save complete')
 
                         log('waiting 4 seconds')
-                        t_end = time() + pausetime
                         keeprendering = False
+                        t_end = time() + pausetime
                         gameGen = False
 
             # upwards facing enemies
@@ -379,12 +443,14 @@ while gameopen:
                         log('enemy moved to bottom, score increased. new score: '+str(score)+' - new enemy position: '+str(enemy.xpos)+', '+str(enemy.ypos))
                     else: enemy.ypos = enemy.ypos - enemyspeed
 
-                    DISPLAY.blit(enemyGlow, ((enemy.xpos-playersize*0.125, enemy.ypos-playersize*0.125)))
-                    DISPLAY.blit(enemytex, (enemy.xpos, enemy.ypos))
+                    if keeprendering:
+                        DISPLAY.blit(enemyGlow, ((enemy.xpos-playersize*0.1625, enemy.ypos-playersize*0.1625)))
+                        DISPLAY.blit(enemytex, (enemy.xpos, enemy.ypos))
 
                     if playerX+playersize > enemy.xpos and playerX < enemy.xpos+playersize and playerY+playersize > enemy.ypos and playerY < enemy.ypos+playersize:
                             
-                        log('rendering death screen')
+                        deathSound.play()
+                        log('rendering death screen - final score: '+str(score)+' - difficulty: '+str(difficulty)+' - highscore: '+str(savedata[0]))
                         DISPLAY.fill(backgroundColour)
                         renderedText = mainfont.render('Your score was '+str(score), True, (255-backgroundColour[0], 255-backgroundColour[1], 255-backgroundColour[2]))
                         DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, 10))
@@ -416,8 +482,8 @@ while gameopen:
                         log('save complete')
 
                         log('waiting 4 seconds')
-                        t_end = time() + pausetime
                         keeprendering = False
+                        t_end = time() + pausetime
                         gameGen = False
 
             # left facing enemies
@@ -430,12 +496,14 @@ while gameopen:
                         log('enemy moved to right, score increased. new score: '+str(score)+' - new enemy position: '+str(enemy.xpos)+', '+str(enemy.ypos))
                     else: enemy.xpos = enemy.xpos - enemyspeed
                     
-                    DISPLAY.blit(enemyGlow, ((enemy.xpos-playersize*0.125, enemy.ypos-playersize*0.125)))
-                    DISPLAY.blit(enemytex, (enemy.xpos, enemy.ypos))
+                    if keeprendering:
+                        DISPLAY.blit(enemyGlow, ((enemy.xpos-playersize*0.1625, enemy.ypos-playersize*0.1625)))
+                        DISPLAY.blit(enemytex, (enemy.xpos, enemy.ypos))
 
                     if playerX+playersize > enemy.xpos and playerX < enemy.xpos+playersize and playerY+playersize > enemy.ypos and playerY < enemy.ypos+playersize:
                             
-                        log('rendering death screen')
+                        deathSound.play()
+                        log('rendering death screen - final score: '+str(score)+' - difficulty: '+str(difficulty)+' - highscore: '+str(savedata[0]))
                         DISPLAY.fill(backgroundColour)
                         renderedText = mainfont.render('Your score was '+str(score), True, (255-backgroundColour[0], 255-backgroundColour[1], 255-backgroundColour[2]))
                         DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, 10))
@@ -467,8 +535,8 @@ while gameopen:
                         log('save complete')
 
                         log('waiting 4 seconds')
-                        t_end = time() + pausetime
                         keeprendering = False
+                        t_end = time() + pausetime
                         gameGen = False
 
             # right facing enemies
@@ -481,12 +549,14 @@ while gameopen:
                         log('enemy moved to left, score increased. new score: '+str(score)+' - new enemy position: '+str(enemy.xpos)+', '+str(enemy.ypos))
                     else: enemy.xpos = enemy.xpos + enemyspeed
                         
-                    DISPLAY.blit(enemyGlow, ((enemy.xpos-playersize*0.125, enemy.ypos-playersize*0.125)))
-                    DISPLAY.blit(enemytex, (enemy.xpos, enemy.ypos))
+                    if keeprendering:
+                        DISPLAY.blit(enemyGlow, ((enemy.xpos-playersize*0.1625, enemy.ypos-playersize*0.1625)))
+                        DISPLAY.blit(enemytex, (enemy.xpos, enemy.ypos))
 
                     if playerX+playersize > enemy.xpos and playerX < enemy.xpos+playersize and playerY+playersize > enemy.ypos and playerY < enemy.ypos+playersize:
                             
-                        log('rendering death screen')
+                        deathSound.play()
+                        log('rendering death screen - final score: '+str(score)+' - difficulty: '+str(difficulty)+' - highscore: '+str(savedata[0]))
                         DISPLAY.fill(backgroundColour)
                         renderedText = mainfont.render('Your score was '+str(score), True, (255-backgroundColour[0], 255-backgroundColour[1], 255-backgroundColour[2]))
                         DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, 10))
@@ -518,6 +588,7 @@ while gameopen:
                         log('save complete')
 
                         log('waiting 4 seconds')
+                        keeprendering = False
                         t_end = time() + pausetime
                         gameGen = False
 
@@ -534,86 +605,94 @@ while gameopen:
             if (keys[pygame.K_DOWN] or keys[pygame.K_s]) and playerY < height-playersize: playerY = playerY + speed
             if keys[pygame.K_p]: screen = 1
 
+        else:
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_p]: 
+                screen = 1
+                t_end = time()-1
+
     # -----> MENU <-----
     elif screen == 1:
 
-        # rainbow background
-        if colourcycle >= 0 and colourcycle < 200: colours[0] = colours[0] + 1
-        elif colourcycle >= 200 and colourcycle < 400: colours[2] = colours[2] - 1
-        elif colourcycle >= 400 and colourcycle < 600: colours[1] = colours[1] + 1
-        elif colourcycle >= 600 and colourcycle < 800: colours[0] = colours[0] - 1
-        elif colourcycle >= 800 and colourcycle < 1000: colours[2] = colours[2] + 1
-        elif colourcycle >= 1000 and colourcycle < 1200: colours[1] = colours[1] - 1
-        elif colourcycle >= 1200: colourcycle = 0
-        DISPLAY.fill([int(colours[0]/3), int(colours[1]/3), int(colours[2]/3)])
-        colourcycle += 1
+        inmenu = True
 
-        # menu text and images
-        renderedText = mainfont.render('Welcome!', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, 10))
-        key = smallfont.render('Press a number on your keyboard to begin.', True, (245, 245, 245))
-        DISPLAY.blit(key, (width/2 - key.get_width()/2, height/9))
-        renderedText = smallfont.render('1 - Launch Game', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, height/6))
-        renderedText = smallfont.render('2 - Edit Options', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2)))
-        renderedText = smallfont.render('3 - View Stats', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*2)))
-        renderedText = smallfont.render('4 - View Controls', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*3)))
-        renderedText = smallfont.render('5 - Backup save files', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*4)))
-        renderedText = smallfont.render('6 - Restore save files', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*5)))
-        renderedText = smallfont.render('Press Q to Quit', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*7)))
+        while inmenu:
+            if menurainbow:
+                # rainbow background
+                if colourcycle >= 0 and colourcycle < 200: colours[0] = colours[0] + 1
+                elif colourcycle >= 200 and colourcycle < 400: colours[2] = colours[2] - 1
+                elif colourcycle >= 400 and colourcycle < 600: colours[1] = colours[1] + 1
+                elif colourcycle >= 600 and colourcycle < 800: colours[0] = colours[0] - 1
+                elif colourcycle >= 800 and colourcycle < 1000: colours[2] = colours[2] + 1
+                elif colourcycle >= 1000 and colourcycle < 1200: colours[1] = colours[1] - 1
+                elif colourcycle >= 1200: colourcycle = 0
+                DISPLAY.fill([int(colours[0]/3), int(colours[1]/3), int(colours[2]/3)])
+                colourcycle += 1
+            else: DISPLAY.blit(menuwallpaper, (0, 0))
 
-        # keyboard input
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_1]: 
-            screen = 0
-            gameGen = False
-        if keys[pygame.K_2]: 
-            screen = 2
-            gameGen = False
-        if keys[pygame.K_3]: 
-            screen = 3
-            gameGen = False
-        if keys[pygame.K_4]: 
-            screen = 4
-            gameGen = False
-        if keys[pygame.K_5]:
+            # menu text and images
+            renderedText = mainfont.render('Welcome!', True, (245, 245, 245))
+            DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, 10))
+
+            DISPLAY.blit(playbutton, ((width/2)-((width/14)*3), (height/6)*1.2))
+            playrect = playbutton.get_rect().move((width/2)-((width/14)*3), (height/6)*1.2)
+            DISPLAY.blit(settingsbutton, ((width/2)-((width/14)*3), (height/6)*1.9))
+            settingsrect = settingsbutton.get_rect().move(((width/2)-((width/14)*3), (height/6)*1.9))
+            DISPLAY.blit(statsbutton, ((width/2)-((width/14)*3), (height/6)*2.6))
+            statsrect = statsbutton.get_rect().move(((width/2)-((width/14)*3), (height/6)*2.6))
+            DISPLAY.blit(helpbutton, ((width/2)-((width/14)*3), (height/6)*3.3))
+            helprect = helpbutton.get_rect().move(((width/2)-((width/14)*3), (height/6)*3.3))
+
+            DISPLAY.blit(exitbutton, ((width/2)-((width/14)*3), height-(height/6)))
+            exitrect = exitbutton.get_rect().move(((width/2)-((width/14)*3), height-(height/6)))
+
+            # if pygame.mouse.get_pressed()[0] and singleplayer_image.collidepoint(mouse_pos):
+
+            # keyboard input
+            for event in pygame.event.get():
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if playrect.collidepoint(event.pos):
+                        screen = 0
+                        gameGen = False
+                        inmenu = False
+                    if settingsrect.collidepoint(event.pos):
+                        screen = 2
+                        gameGen = False
+                        inmenu = False
+                    if statsrect.collidepoint(event.pos):
+                        screen = 3
+                        gameGen = False
+                        inmenu = False
+                    if helprect.collidepoint(event.pos):
+                        screen = 4
+                        gameGen = False
+                        inmenu = False
+                    if exitrect.collidepoint(event.pos):
+                        pygame.quit()
+                        exit()
+                elif event.type==QUIT:
+                    log('quitting')
+                    pygame.quit()
+                    exit()
+
+            clock.tick(60)
+
+            # restart music if it stops
             try:
-                removefile(ufpath+'options.sf')
-                removefile(ufpath+'save.sf')
+                if pygame.mixer.music.get_busy() == False:
+                    log('music finished, restarting')
+                    pygame.mixer.music.play()
             except: pass
-            copyfile(assetspath+'options.sf', ufpath+'options.sf')
-            copyfile(assetspath+'save.sf', ufpath+'save.sf')
-            while keys[pygame.K_5]:
-                keys = pygame.key.get_pressed()
-                if keys[pygame.K_q]:
-                    gameopen = False
-                    pygame.quit()
-        if keys[pygame.K_6]:
-            removefile(assetspath+'options.sf')
-            removefile(assetspath+'save.sf')
-            copyfile(ufpath+'options.sf', assetspath+'options.sf')
-            copyfile(ufpath+'save.sf', assetspath+'save.sf')
-            while keys[pygame.K_6]:
-                keys = pygame.key.get_pressed()
-                if keys[pygame.K_q]:
-                    gameopen = False
-                    pygame.quit()
-        if keys[pygame.K_7]: screen = 9
 
-        if keys[pygame.K_q]:
-            gameopen = False
-            pygame.quit()
+            try: pygame.display.update()
+            except: pass
+
 
     # ----> OPTIONS <---
     elif screen == 2:
 
         inOptions = True
+        reload = True
         
         while inOptions:
 
@@ -634,119 +713,489 @@ while gameopen:
                     inOptions = False
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if input_box1.collidepoint(event.pos): optionsBoxes[0][0] = True
-                    # else: optionsBoxes[0][0] = False
-                        
                     if input_box2.collidepoint(event.pos): optionsBoxes[1][0] = True
-                    # else: optionsBoxes[1][0] = False
-                        
                     if input_box3.collidepoint(event.pos): optionsBoxes[2][0] = True
-                    # else: optionsBoxes[2][0] = False
-                        
-                    if input_box4.collidepoint(event.pos): optionsBoxes[3][0] = True
-                    # else: optionsBoxes[3][0] = False
-                        
-                    if options[7]:
-                        if input_box5.collidepoint(event.pos): optionsBoxes[4][0] = True
-                        # else: optionsBoxes[4][0] = False
+                    if input_box4.collidepoint(event.pos):
+                        options[3] = not options[3]
+                        save_options()
+                        if options[3]: status = 'Texture pack enabled'
+                        else: status = 'Texture pack disabled'
+                        optionsBoxes[3] = bool_to_humanreadable(options[3])
+                    if options[3] and input_box5.collidepoint(event.pos): optionsBoxes[4][0] = True
+                    if input_box6.collidepoint(event.pos): optionsBoxes[5][0] = True
+                    if input_box7.collidepoint(event.pos): optionsBoxes[6][0] = True
+                    if input_box8.collidepoint(event.pos): optionsBoxes[7][0] = True
+                    if input_box9.collidepoint(event.pos):
+                        options[5] = not options[5]
+                        save_options()
+                        if options[5]: status = 'Fullscreen mode enabled'
+                        else: status = 'Fullscreen mode disabled'
+                        optionsBoxes[8] = bool_to_humanreadable(options[5])
+                    if exitrect.collidepoint(event.pos):
+                        screen = 1
+                        inOptions = False
+                        reload = True
                     
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        with open('assets/cont.sf', 'wb') as f: pickleDump(True, f)
-                        exit()
-                    else:
-                        log('Key pressed')
-                        if optionsBoxes[0][0]:
-                            if event.key == pygame.K_RETURN:
-                                log('Options box 0: '+str(optionsBoxes[0]))
+                    log('Key pressed')
+                    if optionsBoxes[0][0]:
+                        if event.key == pygame.K_RETURN:
+                            log('Options box 0: '+str(optionsBoxes[0]))
+                            if int(optionsBoxes[0][1]) >= 1 and int(optionsBoxes[0][1]) <= 3:
                                 try:
-                                    options[2] = int(optionsBoxes[0][1])
-                                    log('difficulty set to '+str(options[2]))
-                                    status = 'Difficulty set to '+str(options[2])
+                                    options[0] = int(optionsBoxes[0][1])
                                     save_options()
+                                    status = 'Difficulty set to '+str(options[0])
+                                    log('difficulty set to '+str(options[0]))
                                 except:
                                     log('failed!')
                                     status = 'An error occured. Try again, and if the problem persists, refer to the help guide by pressing tab.'
-                                optionsBoxes[0][1] = str(options[2])
-                                optionsBoxes[0][0] = False
-                            elif event.key == pygame.K_BACKSPACE: optionsBoxes[0][1] = optionsBoxes[0][1][:-1]
-                            else: optionsBoxes[0][1] += event.unicode
+                                    optionsBoxes[0][1] = str(options[0])
+                            else:
+                                optionsBoxes[0][1] = str(options[0])
+                                status = 'Difficulty must be between 1 and 3.'
+                            optionsBoxes[0][0] = False
+                        elif event.key == pygame.K_1:
+                            log('Options box 0: '+str(optionsBoxes[0]))
+                            try:
+                                options[0] = 1
+                                save_options()
+                                optionsBoxes[0][1] = '1'
+                                status = 'Difficulty set to '+str(options[0])
+                                log('difficulty set to '+str(options[0]))
+                            except:
+                                log('failed!')
+                                status = 'An error occured. Try again, and if the problem persists, refer to the help guide by pressing tab.'
+                                optionsBoxes[0][1] = str(options[0])
+                            optionsBoxes[0][0] = False
+                        elif event.key == pygame.K_2:
+                            log('Options box 0: '+str(optionsBoxes[0]))
+                            try:
+                                options[0] = 2
+                                save_options()
+                                optionsBoxes[0][1] = '2'
+                                status = 'Difficulty set to '+str(options[0])
+                                log('difficulty set to '+str(options[0]))
+                            except:
+                                log('failed!')
+                                status = 'An error occured. Try again, and if the problem persists, refer to the help guide by pressing tab.'
+                                optionsBoxes[0][1] = str(options[0])
+                            optionsBoxes[0][0] = False
+                        elif event.key == pygame.K_3:
+                            log('Options box 0: '+str(optionsBoxes[0]))
+                            try:
+                                options[0] = 3
+                                save_options()
+                                optionsBoxes[0][1] = '3'
+                                status = 'Difficulty set to '+str(options[0])
+                                log('difficulty set to '+str(options[0]))
+                            except:
+                                log('failed!')
+                                status = 'An error occured. Try again, and if the problem persists, refer to the help guide by pressing tab.'
+                                optionsBoxes[0][1] = str(options[0])
+                            optionsBoxes[0][0] = False
+                        elif event.key == pygame.K_BACKSPACE: optionsBoxes[0][1] = optionsBoxes[0][1][:-1]
 
-                        elif optionsBoxes[1][0]:
-                            if event.key == pygame.K_RETURN:
-                                log('Options box 1: '+str(optionsBoxes[1]))
-                                try:
-                                    options[3] = optionsBoxes[1][1]
-                                    log('username set to '+str(options[3]))
-                                    status = 'Username set to '+str(options[3])
-                                    save_options()
-                                except:
-                                    log('failed!')
-                                    status = 'An error occured. Try again, and if the problem persists, refer to the help guide by pressing tab.'
-                                optionsBoxes[1][1] = str(options[3])
-                                optionsBoxes[1][0] = False
-                            elif event.key == pygame.K_BACKSPACE: optionsBoxes[1][1] = optionsBoxes[1][1][:-1]
-                            else: optionsBoxes[1][1] += event.unicode
+                    elif optionsBoxes[1][0]:
+                        if event.key == pygame.K_RETURN:
+                            log('Options box 1: '+str(optionsBoxes[1]))
+                            try:
+                                options[1] = optionsBoxes[1][1]
+                                save_options()
+                                log('username set to '+str(options[1]))
+                                status = 'Username set to '+str(options[1])
+                            except:
+                                log('failed!')
+                                status = 'An error occured. Try again, and if the problem persists, refer to the help guide by pressing tab.'
+                                optionsBoxes[1][1] = str(options[1])
+                            optionsBoxes[1][0] = False
+                        elif event.key == pygame.K_BACKSPACE: optionsBoxes[1][1] = optionsBoxes[1][1][:-1]
+                        else: optionsBoxes[1][1] += event.unicode
 
-                        elif optionsBoxes[2][0]:
-                            if event.key == pygame.K_RETURN:
-                                log('Options box 2: '+str(optionsBoxes[2]))
-                                try:
-                                    temparray = optionsBoxes[2][1].split(', ')
-                                    options[4] = int(temparray[0])
-                                    options[5] = int(temparray[1])
-                                    options[6] = int(temparray[2])
-                                    log('background colour set to '+str(options[4])+', '+str(options[5])+', '+str(options[6]))
-                                    status = 'Background colour set to '+str(options[4])+', '+str(options[5])+', '+str(options[6])
-                                    save_options()
-                                except:
-                                    log('failed!')
-                                    status = 'An error occured. Try again, and if the problem persists, refer to the help guide by pressing tab.'
-                                optionsBoxes[2][1] = str(options[4])+', '+str(options[5])+', '+str(options[6])
-                                optionsBoxes[2][0] = False
-                            elif event.key == pygame.K_BACKSPACE: optionsBoxes[2][1] = optionsBoxes[2][1][:-1]
-                            else: optionsBoxes[2][1] += event.unicode
+                    elif optionsBoxes[2][0]:
+                        if event.key == pygame.K_RETURN:
+                            log('Options box 2: '+str(optionsBoxes[2]))
+                            try:
+                                temparray = optionsBoxes[2][1].split(', ')
+                                options[2][0] = int(temparray[0])
+                                options[2][1] = int(temparray[1])
+                                options[2][2] = int(temparray[2])
+                                save_options()
+                                log('background colour set to '+str(options[2][0])+', '+str(options[2][1])+', '+str(options[2][2]))
+                                status = 'Background colour set to '+str(options[2][0])+', '+str(options[2][1])+', '+str(options[2][2])
+                            except:
+                                log('failed!')
+                                status = 'An error occured. Try again, and if the problem persists, refer to the help guide by pressing tab.'
+                                optionsBoxes[2][1] = str(options[2][0])+', '+str(options[2][1])+', '+str(options[2][2])
+                            optionsBoxes[2][0] = False
+                        elif event.key == pygame.K_BACKSPACE: optionsBoxes[2][1] = optionsBoxes[2][1][:-1]
+                        else: optionsBoxes[2][1] += event.unicode
 
-                        elif optionsBoxes[3][0]:
-                            if event.key == pygame.K_RETURN:
-                                log('Options box 3: '+str(optionsBoxes[3]))
-                                try:
-                                    if optionsBoxes[3][1] == 'on' or optionsBoxes[3][1] == 'On' or optionsBoxes[3][1] == 'ON' or optionsBoxes[3][1] == '1' or optionsBoxes[3][1] == 'true' or optionsBoxes[3][1] == 'True' or optionsBoxes[3][1] == 'TRUE' or optionsBoxes[3][1] == 'yes' or optionsBoxes[3][1] == 'Yes' or optionsBoxes[3][1] == 'YES' or optionsBoxes[3][1] == 'y' or optionsBoxes[3][1] == 'Y':
-                                        options[7] = True
-                                        log('texture pack enabled')
-                                        status = 'Texture pack enabled'
-                                    elif optionsBoxes[3][1] == 'off' or optionsBoxes[3][1] == 'Off' or optionsBoxes[3][1] == 'OFF' or optionsBoxes[3][1] == '0' or optionsBoxes[3][1] == 'false' or optionsBoxes[3][1] == 'False' or optionsBoxes[3][1] == 'FALSE' or optionsBoxes[3][1] == 'no' or optionsBoxes[3][1] == 'No' or optionsBoxes[3][1] == 'NO' or optionsBoxes[3][1] == 'n' or optionsBoxes[3][1] == 'N':
-                                        options[7] = False
-                                        log('texture pack disabled')
-                                        status = 'Texture pack disabled'
-                                    else:
+                    elif optionsBoxes[4][0] and options[3]:
+                        if event.key == pygame.K_RETURN:
+                            log('Options box 4: '+str(optionsBoxes[4]))
+                            try:
+                                options[4] = optionsBoxes[4][1]
+                                save_options()
+                                log('texture path set to '+str(options[4]))
+                                status = 'Texture pack name set to '+str(optionsBoxes[4][1])
+                            except:
+                                log('failed!')
+                                status = 'An error occured. Try again, and if the problem persists, refer to the help guide by pressing tab.'
+                                optionsBoxes[4][1] = str(options[4])
+                            optionsBoxes[4][0] = False
+                        elif event.key == pygame.K_BACKSPACE: optionsBoxes[4][1] = optionsBoxes[4][1][:-1]
+                        else: optionsBoxes[4][1] += event.unicode
+
+                    elif optionsBoxes[5][0]:
+                        if event.key == pygame.K_RETURN:
+                            log('Options box 5: '+str(optionsBoxes[5]))
+                            try:
+                                if int(optionsBoxes[5][1]) <= 100 and int(optionsBoxes[5][1]) >=0:
+                                    try:
+                                        options[6] = float(int(optionsBoxes[5][1])/100)
+                                        save_options()
+                                        log('master volume set to '+str(options[6]))
+                                        status = 'Master volume set to '+str(optionsBoxes[5][1])
+                                    except:
                                         log('failed!')
                                         status = 'An error occured. Try again, and if the problem persists, refer to the help guide by pressing tab.'
-                                    save_options()
-                                except:
-                                    log('failed!')
-                                    status = 'An error occured. Try again, and if the problem persists, refer to the help guide by pressing tab.'
-                                if options[7]: optionsBoxes[3][1] = 'On'
-                                else: optionsBoxes[3][1] = 'Off'
-                                optionsBoxes[3][0] = False
-                            elif event.key == pygame.K_BACKSPACE: optionsBoxes[3][1] = optionsBoxes[3][1][:-1]
-                            else: optionsBoxes[3][1] += event.unicode
+                                        optionsBoxes[5][1] = str(round(options[6]*100))
+                                else:
+                                    status = 'Please enter a number between 0 and 100.'
+                                    optionsBoxes[5][1] = str(round(options[6]*100))
+                            except:
+                                status = 'Please enter a number between 0 and 100.'
+                                optionsBoxes[5][1] = str(round(options[6]*100))
+                            optionsBoxes[5][0] = False
+                        elif event.key == pygame.K_BACKSPACE: optionsBoxes[5][1] = optionsBoxes[5][1][:-1]
+                        elif event.key in numberkeys: optionsBoxes[5][1] += event.unicode
 
-                        elif optionsBoxes[4][0] and options[7]:
-                            if event.key == pygame.K_RETURN:
-                                log('Options box 4: '+str(optionsBoxes[4]))
-                                try:
-                                    options[8] = optionsBoxes[4][1]
-                                    log('texture path set to '+str(options[8]))
-                                    status = 'Texture pack path set to '+str(options[8])
-                                    save_options()
-                                except:
-                                    log('failed!')
-                                    status = 'An error occured. Try again, and if the problem persists, refer to the help guide by pressing tab.'
-                                optionsBoxes[4][1] = str(options[8])
-                                optionsBoxes[4][0] = False
-                            elif event.key == pygame.K_BACKSPACE: optionsBoxes[4][1] = optionsBoxes[4][1][:-1]
-                            else: optionsBoxes[4][1] += event.unicode
+                    elif optionsBoxes[6][0]:
+                        if event.key == pygame.K_RETURN:
+                            log('Options box 6: '+str(optionsBoxes[6]))
+                            try:
+                                if int(optionsBoxes[6][1]) <= 100 and int(optionsBoxes[6][1]) >=0:
+                                    try:
+                                        options[7] = float(int(optionsBoxes[6][1])/100)
+                                        save_options()
+                                        log('music volume set to '+str(options[7]))
+                                        status = 'Music volume set to '+str(optionsBoxes[6][1])
+                                    except:
+                                        log('failed!')
+                                        status = 'An error occured. Try again, and if the problem persists, refer to the help guide by pressing tab.'
+                                        optionsBoxes[6][1] = str(round(options[7]*100))
+                                else:
+                                    status = 'Please enter a number between 0 and 100.'
+                                    optionsBoxes[6][1] = str(round(options[7]*100))
+                            except:
+                                status = 'Please enter a number between 0 and 100.'
+                                optionsBoxes[6][1] = str(round(options[7]*100))
+                            optionsBoxes[6][0] = False
+                        elif event.key == pygame.K_BACKSPACE: optionsBoxes[6][1] = optionsBoxes[6][1][:-1]
+                        elif event.key in numberkeys: optionsBoxes[6][1] += event.unicode
 
+                    elif optionsBoxes[7][0]:
+                        if event.key == pygame.K_RETURN:
+                            log('Options box 7: '+str(optionsBoxes[7]))
+                            try:
+                                if int(optionsBoxes[7][1]) <= 100 and int(optionsBoxes[7][1]) >=0:
+                                    try:
+                                        options[8] = float(int(optionsBoxes[7][1])/100)
+                                        save_options()
+                                        log('death sound volume set to '+str(options[8]))
+                                        status = 'Death sound volume set to '+str(optionsBoxes[7][1])
+                                    except:
+                                        log('failed!')
+                                        status = 'An error occured. Try again, and if the problem persists, refer to the help guide by pressing tab.'
+                                        optionsBoxes[7][1] = str(round(options[8]*100))
+                                else:
+                                    status = 'Please enter a number between 0 and 100.'
+                                    optionsBoxes[7][1] = str(round(options[8]*100))
+                            except:
+                                status = 'Please enter a number between 0 and 100.'
+                                optionsBoxes[7][1] = str(round(options[8]*100))
+                            optionsBoxes[7][0] = False
+                        elif event.key == pygame.K_BACKSPACE: optionsBoxes[7][1] = optionsBoxes[7][1][:-1]
+                        elif event.key in numberkeys: optionsBoxes[7][1] += event.unicode
+
+
+            if menurainbow:
+                # rainbow background
+                if colourcycle >= 0 and colourcycle < 200: colours[0] = colours[0] + 1
+                elif colourcycle >= 200 and colourcycle < 400: colours[2] = colours[2] - 1
+                elif colourcycle >= 400 and colourcycle < 600: colours[1] = colours[1] + 1
+                elif colourcycle >= 600 and colourcycle < 800: colours[0] = colours[0] - 1
+                elif colourcycle >= 800 and colourcycle < 1000: colours[2] = colours[2] + 1
+                elif colourcycle >= 1000 and colourcycle < 1200: colours[1] = colours[1] - 1
+                elif colourcycle >= 1200: colourcycle = 0
+                DISPLAY.fill([int(colours[0]/3), int(colours[1]/3), int(colours[2]/3)])
+                colourcycle += 1
+            else: DISPLAY.blit(menuwallpaper, (0, 0))
+
+            # menu text and images
+            renderedText = mainfont.render('Options', True, (245, 245, 245))
+            DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, 10))
+
+            renderedText = smallfont.render('Changes will be applied after restart.', True, (245, 245, 245))
+            DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, height/9))
+
+            # exit button
+            DISPLAY.blit(exitbutton, ((width/2)-((width/14)*3), height-(height/8)))
+            exitrect = exitbutton.get_rect().move((width/2)-((width/14)*3), height-(height/8))
+
+            # Options 1 - Difficulty
+            renderedText = smallfont.render('Difficulty', True, (245, 245, 245))
+            DISPLAY.blit(renderedText, (width/22, height/6))
+            input_box1 = pygame.Rect(width/22+renderedText.get_width()+(width/44), height/6, width/2, height/24)
+            renderedText = smallfont.render(' '+optionsBoxes[0][1]+' ', True, (245, 245, 245))
+            input_box1.w = max(350, renderedText.get_width()+10)
+            DISPLAY.blit(renderedText, (input_box1.x+5, input_box1.y+5))
+            pygame.draw.rect(DISPLAY, (245, 245, 245), input_box1, 2)
+
+            # Options 2 - Username
+            renderedText = smallfont.render('Username', True, (245, 245, 245))
+            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2)))
+            input_box2 = pygame.Rect(width/22+renderedText.get_width()+(width/44), (height/6)+(renderedText.get_height()*1.2), width/2, height/24)
+            renderedText = smallfont.render(' '+optionsBoxes[1][1]+' ', True, (245, 245, 245))
+            input_box2.w = max(350, renderedText.get_width()+10)
+            DISPLAY.blit(renderedText, (input_box2.x+5, input_box2.y+5))
+            pygame.draw.rect(DISPLAY, (245, 245, 245), input_box2, 2)
+
+            # Options 3 - Background colour
+            renderedText = smallfont.render('Background colour', True, (245, 245, 245))
+            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*2)))
+            input_box3 = pygame.Rect(width/22+renderedText.get_width()+(width/44), (height/6)+(renderedText.get_height()*1.2*2), width/2, height/24)
+            renderedText = smallfont.render(' '+optionsBoxes[2][1]+' ', True, (245, 245, 245))
+            input_box3.w = max(350, renderedText.get_width()+10)
+            DISPLAY.blit(renderedText, (input_box3.x+5, input_box3.y+5))
+            pygame.draw.rect(DISPLAY, (245, 245, 245), input_box3, 2)
+
+            # Options 4 - Texture pack toggle
+            renderedText = smallfont.render('Texture pack on/off', True, (245, 245, 245))
+            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*3)))
+            input_box4 = pygame.Rect(width/22+renderedText.get_width()+(width/44), (height/6)+(renderedText.get_height()*1.2*3), width/2, height/24)
+            renderedText = smallfont.render(' '+optionsBoxes[3]+' ', True, (245, 245, 245))
+            input_box4.w = max(350, renderedText.get_width()+10)
+            DISPLAY.blit(renderedText, (input_box4.x+5, input_box4.y+5))
+            pygame.draw.rect(DISPLAY, (245, 245, 245), input_box4, 2)
+
+            renderedText = smallfont.render('Texture pack name', True, (245, 245, 245))
+            input_box5 = pygame.Rect(width/22+renderedText.get_width()+(width/44), (height/6)+(renderedText.get_height()*1.2*4), width/2, height/24)
+            if options[3]:
+                # Options 5 - Texture pack path
+                DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*4)))
+                renderedText = smallfont.render(' '+optionsBoxes[4][1]+' ', True, (245, 245, 245))
+                input_box5.w = max(350, renderedText.get_width()+10)
+                DISPLAY.blit(renderedText, (input_box5.x+5, input_box5.y+5))
+                pygame.draw.rect(DISPLAY, (245, 245, 245), input_box5, 2)
+
+                renderedText = smallfont.render('Press Escape to Restart the game & save your changes.', True, (245, 245, 245))
+                DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*6)))
+            else:
+                renderedText = smallfont.render('Press Escape to Restart the game & save your changes.', True, (245, 245, 245))
+                DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*5)))
+
+            # Options 6 - Master volume (0-100)
+            renderedText = smallfont.render('Master volume', True, (245, 245, 245))
+            DISPLAY.blit(renderedText, ((width/2), (height/6)))
+            input_box6 = pygame.Rect(renderedText.get_width()+(width/44)+(width/2), (height/6), width/2, height/24)
+            renderedText = smallfont.render(' '+optionsBoxes[5][1]+' ', True, (245, 245, 245))
+            input_box6.w = max(350, renderedText.get_width()+10)
+            DISPLAY.blit(renderedText, (input_box6.x+5, input_box6.y+5))
+            pygame.draw.rect(DISPLAY, (245, 245, 245), input_box6, 2)
+
+            # Options 7 - Music volume (0-100)
+            renderedText = smallfont.render('Music volume', True, (245, 245, 245))
+            DISPLAY.blit(renderedText, ((width/2), (height/6)+(renderedText.get_height()*1.2)))
+            input_box7 = pygame.Rect(renderedText.get_width()+(width/44)+(width/2), (height/6)+(renderedText.get_height()*1.2), width/2, height/24)
+            renderedText = smallfont.render(' '+optionsBoxes[6][1]+' ', True, (245, 245, 245))
+            input_box7.w = max(350, renderedText.get_width()+10)
+            DISPLAY.blit(renderedText, (input_box7.x+5, input_box7.y+5))
+            pygame.draw.rect(DISPLAY, (245, 245, 245), input_box7, 2)
+
+            # Options 8 - Death sound volume (0-100)
+            renderedText = smallfont.render('Death sound volume', True, (245, 245, 245))
+            DISPLAY.blit(renderedText, ((width/2), (height/6)+(renderedText.get_height()*1.2*2)))
+            input_box8 = pygame.Rect(renderedText.get_width()+(width/44)+(width/2), (height/6)+(renderedText.get_height()*1.2*2), width/2, height/24)
+            renderedText = smallfont.render(' '+optionsBoxes[7][1]+' ', True, (245, 245, 245))
+            input_box8.w = max(350, renderedText.get_width()+10)
+            DISPLAY.blit(renderedText, (input_box8.x+5, input_box8.y+5))
+            pygame.draw.rect(DISPLAY, (245, 245, 245), input_box8, 2)
+
+            # Options 9 - Fullscreen toggle
+            renderedText = smallfont.render('Fullscreen', True, (245, 245, 245))
+            DISPLAY.blit(renderedText, ((width/2), (height/6)+(renderedText.get_height()*1.2*3)))
+            input_box9 = pygame.Rect(renderedText.get_width()+(width/44)+(width/2), (height/6)+(renderedText.get_height()*1.2*3), width/2, height/24)
+            renderedText = smallfont.render(' '+optionsBoxes[8]+' ', True, (245, 245, 245))
+            input_box9.w = max(350, renderedText.get_width()+10)
+            DISPLAY.blit(renderedText, (input_box9.x+5, input_box9.y+5))
+            pygame.draw.rect(DISPLAY, (245, 245, 245), input_box9, 2)
+
+            renderedText = smallfont.render(status, True, (245, 245, 245))
+            DISPLAY.blit(renderedText, ((width/2)-(renderedText.get_width()/2), height-(height/22)))
+
+            # keyboard input
+            keys = pygame.key.get_pressed()
+            # if keys[pygame.K_p]: screen = 1
+            if keys[pygame.K_TAB]:
+                screen = 5
+                inOptions = False
+                reload = False
+
+        if reload:
+            if options[3]: # load custom textures (if enabled)
+                log('using custom textures')
+
+                # Player texture
+                try:
+                    player = pygame.image.load('userfiles/textures/'+options[4]+'/player.png')
+                    log('player texture imported')
+                except:
+                    player = pygame.image.load(assetspath+'defaultTextures/player.png')
+                    log('player texture not found, using default')
+
+                # Enemy texture
+                try:
+                    enemytex = pygame.image.load('userfiles/textures/'+options[4]+'/enemy.png')
+                    log('enemy texture imported')
+                except:
+                    enemytex = pygame.image.load(assetspath+'defaultTextures/enemy.png')
+                    log('enemy texture not found, using default')
+
+                # settingsbutton texture
+                try:
+                    settingsbutton = pygame.image.load('userfiles/textures/'+options[4]+'/options.png')
+                    log('settingsbutton texture imported')
+                except:
+                    settingsbutton = pygame.image.load(assetspath+'defaultTextures/options.png')
+                    log('settingsbutton texture not found, using default')
+
+                # menubutton texture
+                try:
+                    menubutton = pygame.image.load('userfiles/textures/'+options[4]+'/menu.png')
+                    log('menubutton texture imported')
+                except:
+                    menubutton = pygame.image.load(assetspath+'defaultTextures/menu.png')
+                    log('menubutton texture not found, using default')
+
+                # exitbutton texture
+                try:
+                    exitbutton = pygame.image.load('userfiles/textures/'+options[4]+'/exit.png')
+                    log('exitbutton texture imported')
+                except:
+                    exitbutton = pygame.image.load(assetspath+'defaultTextures/exit.png')
+                    log('exitbutton texture not found, using default')
+
+                # statsbutton texture
+                try:
+                    statsbutton = pygame.image.load('userfiles/textures/'+options[4]+'/stats.png')
+                    log('statsbutton texture imported')
+                except:
+                    statsbutton = pygame.image.load(assetspath+'defaultTextures/stats.png')
+                    log('statsbutton texture not found, using default')
+
+                # playbutton texture
+                try:
+                    playbutton = pygame.image.load('userfiles/textures/'+options[4]+'/play.png')
+                    log('playbutton texture imported')
+                except:
+                    playbutton = pygame.image.load(assetspath+'defaultTextures/play.png')
+                    log('playbutton texture not found, using default')
+
+                # helpbutton texture
+                try:
+                    helpbutton = pygame.image.load('userfiles/textures/'+options[4]+'/help.png')
+                    log('helpbutton texture imported')
+                except:
+                    helpbutton = pygame.image.load(assetspath+'defaultTextures/help.png')
+                    log('helpbutton texture not found, using default')
+
+                # Menu texture
+                try:
+                    menuwallpaper = pygame.image.load('userfiles/textures/'+options[4]+'/menu.png')
+                    menurainbow = False
+                    log('menu texture imported')
+                except:
+                    menurainbow = True
+                    log('menu texture not found, using rainbow')
+
+                # Game texture
+                try:
+                    gamewallpaper = pygame.image.load('userfiles/textures/'+options[4]+'/game.png')
+                    gamerainbow = False
+                    log('game texture imported')
+                except:
+                    gamerainbow = True
+                    log('game texture not found, using rainbow')
+
+                # Music
+                try:
+                    pygame.mixer.music.load('userfiles/textures/'+options[4]+'/music.mp3')
+                    log('music imported')
+                except:
+                    pygame.mixer.music.load(assetspath+'defaultTextures/music.mp3')
+                    log('music not found, using default')
+
+                # Death sound
+                try:
+                    deathSound = pygame.mixer.Sound('userfiles/textures/'+options[4]+'/death.mp3')
+                    log('death sound imported')
+                except:
+                    deathSound = pygame.mixer.Sound(assetspath+'defaultTextures/death.mp3')
+                    log('death sound not found, using default')
+
+                # Main font
+                try:
+                    mainfont = pygame.font.Font('userfiles/textures/'+options[4]+'/font.ttf', int((width/640)*32))
+                    log('main font imported')
+                except:
+                    mainfont = pygame.font.Font(assetspath+'defaultTextures/font.ttf', int((width/640)*32))
+                    log('main font not found, using default')
+
+                # Small font
+                try:
+                    smallfont = pygame.font.Font('userfiles/textures/'+options[4]+'/smallfont.ttf', int((width/640)*12))
+                    log('small font imported')
+                except:
+                    smallfont = pygame.font.Font(assetspath+'defaultTextures/smallfont.ttf', int((width/640)*12))
+                    log('small font not found, using default')
+
+            else: # import default textures if texture packs are disabled
+                log('using default textures')
+                player = pygame.image.load(assetspath+'defaultTextures/player.png')
+                enemytex = pygame.image.load(assetspath+'defaultTextures/enemy.png')
+                pygame.mixer.music.load(assetspath+'defaultTextures/music.mp3')
+                deathSound = pygame.mixer.Sound(assetspath+'defaultTextures/death.mp3')
+                mainfont = pygame.font.Font(assetspath+'defaultTextures/font.ttf', int((width/640)*32))
+                smallfont = pygame.font.Font(assetspath+'defaultTextures/smallfont.ttf', int((width/640)*12))
+                settingsbutton = pygame.image.load(assetspath+'defaultTextures/options.png')
+                menubutton = pygame.image.load(assetspath+'defaultTextures/menu.png')
+                exitbutton = pygame.image.load(assetspath+'defaultTextures/exit.png')
+                statsbutton = pygame.image.load(assetspath+'defaultTextures/stats.png')
+                playbutton = pygame.image.load(assetspath+'defaultTextures/play.png')
+                helpbutton = pygame.image.load(assetspath+'defaultTextures/help.png')
+
+            # resize textures for window size
+            player = pygame.transform.scale(player, (playersize, playersize))
+            enemytex = pygame.transform.scale(enemytex, (playersize, playersize))
+            settingsbutton = pygame.transform.scale(settingsbutton, (round(width/14)*6, round(width/14)*0.75))
+            menubutton = pygame.transform.scale(menubutton, (round(width/14)*6, round(width/14)*0.75))
+            exitbutton = pygame.transform.scale(exitbutton, (round(width/14)*6, round(width/14)*0.75))
+            statsbutton = pygame.transform.scale(statsbutton, (round(width/14)*6, round(width/14)*0.75))
+            playbutton = pygame.transform.scale(playbutton, (round(width/14)*6, round(width/14)*0.75))
+            helpbutton = pygame.transform.scale(helpbutton, (round(width/14)*6, round(width/14)*0.75))
+            if not menurainbow: menuwallpaper = pygame.transform.scale(menuwallpaper, (width, height))
+            if not gamerainbow: gamewallpaper = pygame.transform.scale(gamewallpaper, (width, height))
+
+            # sound stuff
+            deathSound.set_volume(options[8]*options[6])
+            pygame.mixer.music.set_volume(options[7]*options[6])
+
+    # -----> STATS <----
+    elif screen == 3:
+
+        if menurainbow:
             # rainbow background
             if colourcycle >= 0 and colourcycle < 200: colours[0] = colours[0] + 1
             elif colourcycle >= 200 and colourcycle < 400: colours[2] = colours[2] - 1
@@ -757,116 +1206,33 @@ while gameopen:
             elif colourcycle >= 1200: colourcycle = 0
             DISPLAY.fill([int(colours[0]/3), int(colours[1]/3), int(colours[2]/3)])
             colourcycle += 1
-
-            # menu text and images
-            renderedText = mainfont.render('Options', True, (245, 245, 245))
-            DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, 10))
-
-            renderedText = smallfont.render('Press a number on your keyboard to edit that option\'s value.', True, (245, 245, 245))
-            DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, height/9))
-
-            renderedText = smallfont.render('1 - Difficulty', True, (245, 245, 245))
-            DISPLAY.blit(renderedText, (width/22, height/6))
-            input_box1 = pygame.Rect(width/22+renderedText.get_width()+(width/44), height/6, width/2, height/24)
-
-            renderedText = smallfont.render('2 - Username', True, (245, 245, 245))
-            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2)))
-            input_box2 = pygame.Rect(width/22+renderedText.get_width()+(width/44), (height/6)+(renderedText.get_height()*1.2), width/2, height/24)
-
-            renderedText = smallfont.render('3 - Background colour', True, (245, 245, 245))
-            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*2)))
-            input_box3 = pygame.Rect(width/22+renderedText.get_width()+(width/44), (height/6)+(renderedText.get_height()*1.2*2), width/2, height/24)
-
-            renderedText = smallfont.render('4 - Texture pack on/off', True, (245, 245, 245))
-            DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*3)))
-            input_box4 = pygame.Rect(width/22+renderedText.get_width()+(width/44), (height/6)+(renderedText.get_height()*1.2*3), width/2, height/24)
-
-            if options[7]:
-                renderedText = smallfont.render('5 - Texture pack path', True, (245, 245, 245))
-                DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*4)))
-                input_box5 = pygame.Rect(width/22+renderedText.get_width()+(width/44), (height/6)+(renderedText.get_height()*1.2*4), width/2, height/24)
-
-                renderedText = smallfont.render('Press P to Exit', True, (245, 245, 245))
-                DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*6)))
-            else:
-                renderedText = smallfont.render('Press P to Exit', True, (245, 245, 245))
-                DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*5)))
-
-            renderedText = smallfont.render(status, True, (245, 245, 245))
-            DISPLAY.blit(renderedText, ((width/2)-(renderedText.get_width()/2), height-(height/22)))
-
-            renderedText = smallfont.render(' '+optionsBoxes[0][1], True, (245, 245, 245))
-            input_box1.w = max(350, renderedText.get_width()+10)
-            DISPLAY.blit(renderedText, (input_box1.x+5, input_box1.y+5))
-            pygame.draw.rect(DISPLAY, (245, 245, 245), input_box1, 2)
-
-            renderedText = smallfont.render(' '+optionsBoxes[1][1], True, (245, 245, 245))
-            input_box2.w = max(350, renderedText.get_width()+10)
-            DISPLAY.blit(renderedText, (input_box2.x+5, input_box2.y+5))
-            pygame.draw.rect(DISPLAY, (245, 245, 245), input_box2, 2)
-
-            renderedText = smallfont.render(' '+optionsBoxes[2][1], True, (245, 245, 245))
-            input_box3.w = max(350, renderedText.get_width()+10)
-            DISPLAY.blit(renderedText, (input_box3.x+5, input_box3.y+5))
-            pygame.draw.rect(DISPLAY, (245, 245, 245), input_box3, 2)
-
-            renderedText = smallfont.render(' '+optionsBoxes[3][1], True, (245, 245, 245))
-            input_box4.w = max(350, renderedText.get_width()+10)
-            DISPLAY.blit(renderedText, (input_box4.x+5, input_box4.y+5))
-            pygame.draw.rect(DISPLAY, (245, 245, 245), input_box4, 2)
-
-            if options[7]:
-                renderedText = smallfont.render(' '+optionsBoxes[4][1], True, (245, 245, 245))
-                input_box5.w = max(350, renderedText.get_width()+10)
-                DISPLAY.blit(renderedText, (input_box5.x+5, input_box5.y+5))
-                pygame.draw.rect(DISPLAY, (245, 245, 245), input_box5, 2)
-
-            # keyboard input
-            keys = pygame.key.get_pressed()
-            if keys[pygame.K_p]: screen = 1
-            if keys[pygame.K_TAB]: screen = 5
-
-        screen = 1
-
-    # -----> STATS <----
-    elif screen == 3:
-
-        # rainbow background
-        if colourcycle >= 0 and colourcycle < 200: colours[0] = colours[0] + 1
-        elif colourcycle >= 200 and colourcycle < 400: colours[2] = colours[2] - 1
-        elif colourcycle >= 400 and colourcycle < 600: colours[1] = colours[1] + 1
-        elif colourcycle >= 600 and colourcycle < 800: colours[0] = colours[0] - 1
-        elif colourcycle >= 800 and colourcycle < 1000: colours[2] = colours[2] + 1
-        elif colourcycle >= 1000 and colourcycle < 1200: colours[1] = colours[1] - 1
-        elif colourcycle >= 1200: colourcycle = 0
-        DISPLAY.fill([int(colours[0]/3), int(colours[1]/3), int(colours[2]/3)])
-        colourcycle += 1
+        else: DISPLAY.blit(menuwallpaper, (0, 0))
         
         # menu text and images
         renderedText = mainfont.render('Stats', True, (245, 245, 245))
         DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, 10))
         try:
-            renderedText = smallfont.render('Highscore: '+str(savedata[0]), True, (245, 245, 245))
+            renderedText = smallfont.render('Difficulty 1', True, (245, 245, 245))
             DISPLAY.blit(renderedText, (width/22, height/6))
-            renderedText = smallfont.render('Highscore difficulty: '+str(savedata[1]), True, (245, 245, 245))
+            renderedText = smallfont.render('Highscore: '+str(savedata[0]), True, (245, 245, 245))
             DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*1)))
-            renderedText = smallfont.render('Highscore date: '+str(savedata[2]), True, (245, 245, 245))
+            renderedText = smallfont.render('Date: '+str(savedata[2]), True, (245, 245, 245))
             DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*2)))
         except: pass
         try:
-            renderedText = smallfont.render('Latest score: '+str(savedata[len(savedata)-2]), True, (245, 245, 245))
+            renderedText = smallfont.render('Difficulty 2', True, (245, 245, 245))
             DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*3.5)))
-            renderedText = smallfont.render('Latest difficulty: '+str(savedata[len(savedata)-1]), True, (245, 245, 245))
+            renderedText = smallfont.render('Highscore: '+str(savedata[0]), True, (245, 245, 245))
             DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*4.5)))
-            renderedText = smallfont.render('Latest date: '+str(savedata[len(savedata)]), True, (245, 245, 245))
+            renderedText = smallfont.render('Date: '+str(savedata[2]), True, (245, 245, 245))
             DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*5.5)))
         except: pass
         try:
-            renderedText = smallfont.render('Earliest score: '+str(savedata[3]), True, (245, 245, 245))
+            renderedText = smallfont.render('Difficulty 3', True, (245, 245, 245))
             DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*7)))
-            renderedText = smallfont.render('Earliest difficulty: '+str(savedata[4]), True, (245, 245, 245))
+            renderedText = smallfont.render('Highscore: '+str(savedata[0]), True, (245, 245, 245))
             DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*8)))
-            renderedText = smallfont.render('Earliest date: '+str(savedata[5]), True, (245, 245, 245))
+            renderedText = smallfont.render('Date: '+str(savedata[2]), True, (245, 245, 245))
             DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*9)))
         except: pass
         renderedText = smallfont.render('Press P to Exit, or 1 to jump directly into the game.', True, (245, 245, 245))
@@ -880,16 +1246,18 @@ while gameopen:
     # -----> HELP <-----
     elif screen == 4:
 
-        # rainbow background
-        if colourcycle >= 0 and colourcycle < 200: colours[0] = colours[0] + 1
-        elif colourcycle >= 200 and colourcycle < 400: colours[2] = colours[2] - 1
-        elif colourcycle >= 400 and colourcycle < 600: colours[1] = colours[1] + 1
-        elif colourcycle >= 600 and colourcycle < 800: colours[0] = colours[0] - 1
-        elif colourcycle >= 800 and colourcycle < 1000: colours[2] = colours[2] + 1
-        elif colourcycle >= 1000 and colourcycle < 1200: colours[1] = colours[1] - 1
-        elif colourcycle >= 1200: colourcycle = 0
-        DISPLAY.fill([int(colours[0]/3), int(colours[1]/3), int(colours[2]/3)])
-        colourcycle += 1
+        if menurainbow:
+            # rainbow background
+            if colourcycle >= 0 and colourcycle < 200: colours[0] = colours[0] + 1
+            elif colourcycle >= 200 and colourcycle < 400: colours[2] = colours[2] - 1
+            elif colourcycle >= 400 and colourcycle < 600: colours[1] = colours[1] + 1
+            elif colourcycle >= 600 and colourcycle < 800: colours[0] = colours[0] - 1
+            elif colourcycle >= 800 and colourcycle < 1000: colours[2] = colours[2] + 1
+            elif colourcycle >= 1000 and colourcycle < 1200: colours[1] = colours[1] - 1
+            elif colourcycle >= 1200: colourcycle = 0
+            DISPLAY.fill([int(colours[0]/3), int(colours[1]/3), int(colours[2]/3)])
+            colourcycle += 1
+        else: DISPLAY.blit(menuwallpaper, (0, 0))
 
         # menu text and images
         renderedText = mainfont.render('Help', True, (245, 245, 245))
@@ -913,42 +1281,46 @@ while gameopen:
     # ---> OPT HELP <---
     elif screen == 5:
 
-        # rainbow background
-        if colourcycle >= 0 and colourcycle < 200: colours[0] = colours[0] + 1
-        elif colourcycle >= 200 and colourcycle < 400: colours[2] = colours[2] - 1
-        elif colourcycle >= 400 and colourcycle < 600: colours[1] = colours[1] + 1
-        elif colourcycle >= 600 and colourcycle < 800: colours[0] = colours[0] - 1
-        elif colourcycle >= 800 and colourcycle < 1000: colours[2] = colours[2] + 1
-        elif colourcycle >= 1000 and colourcycle < 1200: colours[1] = colours[1] - 1
-        elif colourcycle >= 1200: colourcycle = 0
-        DISPLAY.fill([int(colours[0]/3), int(colours[1]/3), int(colours[2]/3)])
-        colourcycle += 1
+        if menurainbow:
+            # rainbow background
+            if colourcycle >= 0 and colourcycle < 200: colours[0] = colours[0] + 1
+            elif colourcycle >= 200 and colourcycle < 400: colours[2] = colours[2] - 1
+            elif colourcycle >= 400 and colourcycle < 600: colours[1] = colours[1] + 1
+            elif colourcycle >= 600 and colourcycle < 800: colours[0] = colours[0] - 1
+            elif colourcycle >= 800 and colourcycle < 1000: colours[2] = colours[2] + 1
+            elif colourcycle >= 1000 and colourcycle < 1200: colours[1] = colours[1] - 1
+            elif colourcycle >= 1200: colourcycle = 0
+            DISPLAY.fill([int(colours[0]/3), int(colours[1]/3), int(colours[2]/3)])
+            colourcycle += 1
+        else: DISPLAY.blit(menuwallpaper, (0, 0))
 
         # menu text and images
         renderedText = mainfont.render('Options help', True, (245, 245, 245))
         DISPLAY.blit(renderedText, (width/2 - renderedText.get_width()/2, 10))
+
         renderedText = smallfont.render('To edit a value, click in the box next to it, and change it\'s value by typing a new one.', True, (245, 245, 245))
         DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*1)))
+
         renderedText = smallfont.render('Press enter to submit.', True, (245, 245, 245))
         DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*2)))
-        renderedText = smallfont.render('When editing the Difficulty value, make sure you only type numbers, and no other characters.', True, (245, 245, 245))
+
+        renderedText = smallfont.render('When editing the Difficulty value, Press 1, 2, or 3. You don\'t need to press enter.', True, (245, 245, 245))
         DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*3.5)))
-        renderedText = smallfont.render('You can type anything in the username field.', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*5)))
+
         renderedText = smallfont.render('When editing the Background value, type 3 numbers that are above 0 and less than 255, ', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*6.5)))
+        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*5)))
+
         renderedText = smallfont.render('seperated by commas (e.g. 45, 255, 0).', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*8.5)))
-        renderedText = smallfont.render('When editing the Custom Texture toggle value, type \'on\' or \'off\'. You can also type \'true\', ', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*10)))
-        renderedText = smallfont.render('\'false\', \'y\', \'n\', \'yes\', or \'no\'.', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*11)))
-        renderedText = smallfont.render('When editing the Custom Texture path value, type the path of your texture pack in relation', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*12.5)))
-        renderedText = smallfont.render('to the game\'s files. Make sure you put a \'/\' at the end of it.', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*13.5)))
+        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*6)))
+
+        renderedText = smallfont.render('Click a toggle (on/off) to toggle it.', True, (245, 245, 245))
+        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*7.5)))
+
+        renderedText = smallfont.render('Any volume fields can be any whole number between 0 and 100.', True, (245, 245, 245))
+        DISPLAY.blit(renderedText, (width/22, (height/6)+(renderedText.get_height()*1.2*9)))
+
         renderedText = smallfont.render('Press P to return to the options menu, or 1 to return to the main menu.', True, (245, 245, 245))
-        DISPLAY.blit(renderedText, (width/22, height-renderedText.get_height()*1.2))
+        DISPLAY.blit(renderedText, (width/22, height-renderedText.get_height()*2))
 
         # keyboard input
         keys = pygame.key.get_pressed()

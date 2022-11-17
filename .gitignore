@@ -8,6 +8,7 @@ __pycache__/
 *.lnk
 *log.txt
 *save.dmp
+*gvdesign
 
 # C extensions
 *.so
