@@ -4,6 +4,8 @@ An assortment of games i've made over time in python for various projects (mostl
 
 All of these are designed to be run in Python 3.9 (i think? python 3.something anyway)
 
+If you've just been pulled here from my [github pages site](https://edwardmwild.github.io), you can find downlad links for the games below, along with some brief instructions on how to run them. [scroll up](https://github.com/edwardmwild/python-games) to view the source code.
+
 # Snek
 
 A game of snake, run entirely in your terminal.
@@ -12,6 +14,7 @@ A game of snake, run entirely in your terminal.
 
  - Uses Curses, so will not work in IDLE - Make sure you run this in your terminal.
  - Will overwrite any file with the name `save.dmp` in the same folder as `main.py`.
+[Click here](https://raw.githubusercontent.com/edwardmwild/python-games/main/Snek/main.py) to download Snek. you may need to right click > save file as on either the link, or the page it takes you to if it doesn't download automagically.
  
 # Dedge
 
@@ -21,3 +24,4 @@ A game where your aim is to dodge the enemies (yes, dedge was a typo, but i pers
 
  - Uses Pygame and screeninfo (install with `pip3 install pygame` and `pip3 install screeninfo`
  - On windows, i'd recommend opening task manager and enabling `Always on top` before playing, as sometimes (but very rarely, you'll almost definitely never see this!) the game can get stuck in fullscreen and if you don't do this, will force you to force restart your computer (or force quit everything / log out)
+To download Dedge, scroll up, download this repo as a .zip archive, then open the Dedge folder. works better on macOS (as that's what i developed this on ~~and mac is superior~~)
